@@ -36,8 +36,10 @@ import com.ivy.wallet.ui.onboarding.model.toCloseTimeRange
 import com.ivy.wallet.utils.dateNowUTC
 import com.ivy.wallet.utils.ioThread
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import javax.inject.Inject
 
@@ -68,23 +70,26 @@ class HomeViewModel @Inject constructor(
         HomeState.initial(ivyWalletCtx = ivyContext)
     )
 
-    override suspend fun handleEvent(event: HomeEvent): suspend () -> HomeState = when (event) {
-        HomeEvent.Start -> start()
-        HomeEvent.BalanceClick -> onBalanceClick()
-        HomeEvent.HiddenBalanceClick -> onHiddenBalanceClick()
-        is HomeEvent.PayOrGetPlanned -> payOrGetPlanned(event.transaction)
-        is HomeEvent.SkipPlanned -> skipPlanned(event.transaction)
-        is HomeEvent.SkipAllPlanned -> skipAllPlanned(event.transactions)
-        is HomeEvent.SetPeriod -> setPeriod(event.period)
-        HomeEvent.SelectNextMonth -> nextMonth()
-        HomeEvent.SelectPreviousMonth -> previousMonth()
-        is HomeEvent.SetUpcomingExpanded -> setUpcomingExpanded(event.expanded)
-        is HomeEvent.SetOverdueExpanded -> setOverdueExpanded(event.expanded)
-        is HomeEvent.SetBuffer -> setBuffer(event.buffer).fixUnit()
-        is HomeEvent.SetCurrency -> setCurrency(event.currency).fixUnit()
-        HomeEvent.SwitchTheme -> switchTheme().fixUnit()
-        is HomeEvent.DismissCustomerJourneyCard -> dismissCustomerJourneyCard(event.card)
-    }
+    override suspend fun handleEvent(event: HomeEvent): suspend () -> HomeState =
+        withContext(Dispatchers.Default) {
+            when (event) {
+                HomeEvent.Start -> start()
+                HomeEvent.BalanceClick -> onBalanceClick()
+                HomeEvent.HiddenBalanceClick -> onHiddenBalanceClick()
+                is HomeEvent.PayOrGetPlanned -> payOrGetPlanned(event.transaction)
+                is HomeEvent.SkipPlanned -> skipPlanned(event.transaction)
+                is HomeEvent.SkipAllPlanned -> skipAllPlanned(event.transactions)
+                is HomeEvent.SetPeriod -> setPeriod(event.period)
+                HomeEvent.SelectNextMonth -> nextMonth()
+                HomeEvent.SelectPreviousMonth -> previousMonth()
+                is HomeEvent.SetUpcomingExpanded -> setUpcomingExpanded(event.expanded)
+                is HomeEvent.SetOverdueExpanded -> setOverdueExpanded(event.expanded)
+                is HomeEvent.SetBuffer -> setBuffer(event.buffer).fixUnit()
+                is HomeEvent.SetCurrency -> setCurrency(event.currency).fixUnit()
+                HomeEvent.SwitchTheme -> switchTheme().fixUnit()
+                is HomeEvent.DismissCustomerJourneyCard -> dismissCustomerJourneyCard(event.card)
+            }
+        }
 
     private suspend fun start(): suspend () -> HomeState =
         suspend {

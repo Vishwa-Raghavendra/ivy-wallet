@@ -10,9 +10,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -43,6 +41,7 @@ import com.ivy.wallet.ui.theme.*
 import com.ivy.wallet.ui.theme.components.*
 import com.ivy.wallet.ui.theme.modal.ChoosePeriodModal
 import com.ivy.wallet.ui.theme.wallet.AmountCurrencyB1Row
+import com.ivy.wallet.ui.theme.wallet.AmountCurrencyB2Row
 import com.ivy.wallet.utils.*
 
 @ExperimentalFoundationApi
@@ -312,7 +311,7 @@ private fun CategoryAmountCardWithSub(
 
     onEventHandler: (PieChartStatisticEvent) -> Unit = {},
 ) {
-    CategoryAmountCard(
+    NewCategoryAmountCard(
         categoryAmount = categoryAmount,
         currency = currency,
         totalAmount = totalAmount,
@@ -339,11 +338,12 @@ private fun CategoryAmountCardWithSub(
         Column(modifier = Modifier.padding(start = 24.dp)) {
             categoryAmount.subCategoryState.subCategoriesList.forEach {
                 Spacer(Modifier.height(16.dp))
-                CategoryAmountCard(
+                NewCategoryAmountCard(
                     categoryAmount = it,
                     currency = currency,
                     totalAmount = totalAmount,
-                    selectedCategory = selectedCategory
+                    selectedCategory = selectedCategory,
+                    subCategoryTotalAmount = categoryAmount.totalAmount()
                 ) {
                     nav.navigateTo(
                         ItemStatistic(
@@ -482,6 +482,145 @@ private fun CategoryAmountCard(
                             },
                         icon = R.drawable.ic_expandarrow,
                         tint = findContrastTextColor(categoryColor)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NewCategoryAmountCard(
+    categoryAmount: CategoryAmount,
+    currency: String,
+    totalAmount: Double,
+    subCategoryTotalAmount: Double = 0.0,
+
+    selectedCategory: SelectedCategory?,
+
+    onSubCategoryListExpand: () -> Unit = {},
+    onClick: () -> Unit
+) {
+    val uiColors = UI.colors
+    val displayState by remember(selectedCategory,categoryAmount) {
+        mutableStateOf(categoryAmount.toDisplayState(selectedCategory = selectedCategory, uiColors))
+    }
+
+    Row(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+            .thenIf(displayState.selectedState) {
+                drawColoredShadow(displayState.backgroundColor)
+            }
+            .clip(UI.shapes.r3)
+            .background(displayState.backgroundColor, UI.shapes.r3)
+            .clickable {
+                onClick()
+            }
+            .padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Spacer(Modifier.width(20.dp))
+
+        ItemIconM(
+            modifier = Modifier.background(displayState.categoryColor, CircleShape),
+            iconName = displayState.category?.icon,
+            tint = displayState.tintOfCategoryColor,
+            iconContentScale = ContentScale.None,
+            Default = {
+                ItemIconMDefaultIcon(
+                    modifier = Modifier.background(displayState.categoryColor, CircleShape),
+                    iconName = displayState.category?.icon,
+                    defaultIcon = R.drawable.ic_custom_category_m,
+                    tint = displayState.tintOfCategoryColor
+                )
+            }
+        )
+
+        Spacer(Modifier.width(16.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 16.dp),
+                    text = displayState.category?.name ?: stringResource(R.string.unspecified),
+                    style = UI.typo.b2.style(
+                        color = displayState.textColor,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Start
+                    )
+                )
+
+                Row {
+                    PercentText(
+                        amount = displayState.totalAmount,
+                        totalAmount = totalAmount,
+                        selectedState = displayState.selectedState,
+                        contrastColor = displayState.textColor
+                    )
+                    if (displayState.isSubCategoryListExpanded && displayState.currentCategoryAmount != 0.0 || subCategoryTotalAmount != 0.0) {
+                        Text(
+                            text = " / ",
+                            style = UI.typo.nB2.style(
+                                color = if (displayState.selectedState) displayState.textColor else UI.colors.pureInverse,
+                                fontWeight = FontWeight.Normal
+                            )
+                        )
+                        PercentText(
+                            amount = displayState.currentCategoryAmount,
+                            totalAmount = if (displayState.totalAmount != displayState.currentCategoryAmount) displayState.totalAmount else subCategoryTotalAmount,
+                            selectedState = displayState.selectedState,
+                            contrastColor = displayState.textColor
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(24.dp))
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                ) {
+                    AmountCurrencyB1Row(
+                        amount = displayState.totalAmount,
+                        currency = currency,
+                        textColor = displayState.textColor,
+                        amountFontWeight = FontWeight.ExtraBold
+                    )
+                    if (displayState.isSubCategoryListExpanded) {
+                        Spacer(Modifier.height(4.dp))
+                        AmountCurrencyB2Row(
+                            amount = categoryAmount.amount,
+                            currency = currency,
+                            textColor = displayState.textColor,
+                            amountFontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+                if (displayState.isSubcategoriesPresent) {
+                    IvyIcon(
+                        modifier = Modifier
+                            .padding(end = 16.dp)
+                            .clickable {
+                                onSubCategoryListExpand()
+                            },
+                        icon = R.drawable.ic_expandarrow,
+                        tint = displayState.tintOfCategoryColor
                     )
                 }
             }

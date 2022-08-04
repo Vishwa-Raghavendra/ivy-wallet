@@ -50,7 +50,7 @@ fun DependencyHandler.appModuleDependencies(
     implementation("com.github.ILIYANGERMANOV:ivy-frp:0.9.5")
 
     Kotlin(version = kotlinVersion)
-    Coroutines(version = "1.5.0")
+    Coroutines(version = "1.6.4")
     FunctionalProgramming(
         arrowVersion = "1.0.1",
         kotestVersion = "5.1.0",
@@ -66,11 +66,11 @@ fun DependencyHandler.appModuleDependencies(
         hiltVersion = "2.38.1",
         versionX = "1.0.0"
     )
-    RoomDB(version = "2.4.0-alpha03")
+    RoomDB(version = "2.4.3")
 
     Networking(retrofitVersion = "2.9.0")
 
-    Lifecycle(version = "2.3.1")
+    Lifecycle(version = "2.5.1")
     AndroidX()
 
     DataStore()
@@ -82,7 +82,7 @@ fun DependencyHandler.ivyDesignModuleDependencies(
     kotlinVersion: String = GlobalVersions.kotlinVersion
 ) {
     Kotlin(version = kotlinVersion)
-    Coroutines(version = "1.5.0")
+    Coroutines(version = "1.6.0")
     FunctionalProgramming(
         arrowVersion = "1.0.1",
         kotestVersion = "5.1.0",
@@ -92,7 +92,7 @@ fun DependencyHandler.ivyDesignModuleDependencies(
     Compose(version = GlobalVersions.compose)
 
     AndroidX()
-    Lifecycle(version = "2.3.1")
+    Lifecycle(version = "2.5.1")
 }
 //---------------------------------------------------------------------------------
 
@@ -255,16 +255,17 @@ fun DependencyHandler.Lifecycle(
 
 fun DependencyHandler.AndroidX() {
     //https://developer.android.com/jetpack/androidx/releases/appcompat
-    implementation("androidx.appcompat:appcompat:1.4.1")
+    implementation("androidx.appcompat:appcompat:1.4.2")
 
     //URL: https://developer.android.com/jetpack/androidx/releases/core
-    implementation("androidx.core:core-ktx:1.7.0")
+    implementation("androidx.core:core-ktx:1.8.0")
 
     //URL: https://developer.android.com/jetpack/androidx/releases/work
     val workVersion = "2.7.1"
     implementation("androidx.work:work-runtime-ktx:$workVersion")
     implementation("androidx.work:work-testing:$workVersion")
 
+    //URL: https://developer.android.com/jetpack/androidx/releases/biometric
     implementation("androidx.biometric:biometric:1.1.0")
 
     //URL: https://developer.android.com/jetpack/androidx/releases/recyclerview

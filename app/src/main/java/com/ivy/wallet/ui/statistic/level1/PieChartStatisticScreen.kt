@@ -561,7 +561,7 @@ private fun NewCategoryAmountCard(
 
                 Row {
                     PercentText(
-                        amount = displayState.totalAmount,
+                        amount = displayState.getRelevantAmount(),
                         totalAmount = totalAmount,
                         selectedState = displayState.selectedState,
                         contrastColor = displayState.textColor

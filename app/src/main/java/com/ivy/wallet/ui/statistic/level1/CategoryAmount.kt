@@ -41,8 +41,11 @@ data class CategoryAmountDisplayState(
     val textColor: Color,
     val isSubCategoryListExpanded: Boolean,
     val isSubcategoriesPresent:Boolean,
-    val currentCategoryAmount:Double
-)
+    val currentCategoryAmount:Double,
+    private val relevantAmount: Double
+){
+    fun getRelevantAmount() = relevantAmount
+}
 
 
 fun CategoryAmount.toDisplayState(
@@ -61,6 +64,11 @@ fun CategoryAmount.toDisplayState(
         val textColor = findContrastTextColor(backgroundColor = backgroundColor)
         val tintOfCategoryColor = findContrastTextColor(categoryColor)
 
+        val relevantAmount = if (subCategoryState.subCategoryListExpanded)
+            amount
+        else
+            totalAmount()
+
         return@with CategoryAmountDisplayState(
             category,
             totalAmount,
@@ -71,6 +79,7 @@ fun CategoryAmount.toDisplayState(
             textColor,
             subCategoryState.subCategoryListExpanded,
             subCategoryState.subCategoriesList.isNotEmpty(),
-            amount
+            amount,
+            relevantAmount
         )
-    }
+    }

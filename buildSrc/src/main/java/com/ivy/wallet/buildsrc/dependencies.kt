@@ -76,6 +76,8 @@ fun DependencyHandler.appModuleDependencies(
     DataStore()
 
     ThirdParty()
+
+    Debug()
 }
 
 fun DependencyHandler.ivyDesignModuleDependencies(
@@ -118,7 +120,7 @@ fun DependencyHandler.Compose(version: String) {
     implementation("androidx.compose.material:material:$version")
     implementation("androidx.compose.material:material-icons-extended:$version")
     implementation("androidx.compose.runtime:runtime-livedata:$version")
-    implementation("androidx.compose.ui:ui-tooling:$version")
+    implementation ("androidx.compose.ui:ui-tooling-preview:$version")
 
     //URL: https://developer.android.com/jetpack/androidx/releases/activity
     implementation("androidx.activity:activity-compose:1.4.0")
@@ -353,4 +355,11 @@ fun DependencyHandler.Kotest(
 
 
     testImplementation("io.kotest.extensions:kotest-property-arrow:$arrowVersion")
+}
+
+/**
+ * Debug Implementations for Android Compose Previews
+ */
+fun DependencyHandler.Debug(){
+    debugImplementation("androidx.compose.ui:ui-tooling:1.1.1")
 }

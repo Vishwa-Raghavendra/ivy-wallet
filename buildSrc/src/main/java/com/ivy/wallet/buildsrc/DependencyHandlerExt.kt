@@ -38,3 +38,6 @@ internal fun DependencyHandler.kaptAndroidTest(value: String) {
     this.add("kaptAndroidTest", value)
 }
 
+internal fun DependencyHandler.debugImplementation(value: String){
+    this.add("debugImplementation", value)
+}

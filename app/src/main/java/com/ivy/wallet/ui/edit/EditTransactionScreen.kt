@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.insets.navigationBarsPadding
 import com.google.accompanist.insets.statusBarsPadding
 import com.ivy.design.l0_system.UI
@@ -183,6 +184,7 @@ private fun BoxWithConstraintsScope.UI(
     var selectedAcc by remember(account) {
         mutableStateOf(account)
     }
+    var viewDocumentModalVisible by remember { mutableStateOf(false) }
 
     val amountModalId =
         remember(screen.initialTransactionId, customExchangeRateState.exchangeRate) {
@@ -268,16 +270,23 @@ private fun BoxWithConstraintsScope.UI(
                 )
             )
         }
+        Spacer(Modifier.height(32.dp))
 
-        if (transactionType != TransactionType.TRANSFER) {
-            Spacer(Modifier.height(32.dp))
+        FlowRow(crossAxisSpacing = 16.dp) {
+            if (transactionType != TransactionType.TRANSFER) {
 
-            Category(
-                category = category,
-                onChooseCategory = {
-                    chooseCategoryModalVisible = true
-                }
-            )
+                Category(
+                    category = category,
+                    onChooseCategory = {
+                        chooseCategoryModalVisible = true
+                    }
+                )
+
+            }
+
+            AddDocument(existingDocumentList = emptyList()) {
+                viewDocumentModalVisible = true
+            }
         }
 
         Spacer(Modifier.height(32.dp))
@@ -540,6 +549,21 @@ private fun BoxWithConstraintsScope.UI(
         decimalCountMax = 4,
         onAmountChanged = {
             onExchangeRateChanged(it)
+        }
+    )
+
+    ViewDocumentModal(
+        existingDocumentList = emptyList(),
+        visible = viewDocumentModalVisible,
+        onDismiss = { viewDocumentModalVisible = false },
+        onDocumentAdd = {
+
+        },
+        onDocumentClick = {
+
+        },
+        onDocumentRemove = {
+
         }
     )
 

@@ -1,5 +1,6 @@
 package com.ivy.wallet.ui.edit
 
+import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -71,6 +73,7 @@ fun BoxWithConstraintsScope.EditTransactionScreen(screen: EditTransaction) {
     val accounts by viewModel.accounts.collectAsState(emptyList())
 
     val hasChanges by viewModel.hasChanges.collectAsState(false)
+    val documentState by viewModel.documentState.collectAsState()
 
     onScreenStart {
         viewModel.start(screen)
@@ -99,6 +102,7 @@ fun BoxWithConstraintsScope.EditTransactionScreen(screen: EditTransaction) {
         accounts = accounts,
 
         hasChanges = hasChanges,
+        documentState = documentState,
 
         onTitleChanged = viewModel::onTitleChanged,
         onDescriptionChanged = viewModel::onDescriptionChanged,
@@ -149,6 +153,7 @@ private fun BoxWithConstraintsScope.UI(
     accounts: List<Account>,
 
     hasChanges: Boolean = false,
+    documentState: DocumentState = DocumentState(),
 
     onTitleChanged: (String?) -> Unit,
     onDescriptionChanged: (String?) -> Unit,
@@ -552,12 +557,15 @@ private fun BoxWithConstraintsScope.UI(
         }
     )
 
-    ViewDocumentModal(
-        existingDocumentList = emptyList(),
+    val viewModel: EditTransactionViewModel = viewModel()
+    val context = LocalContext.current
+
+    DocumentModal(
+        documentState = documentState,
         visible = viewDocumentModalVisible,
         onDismiss = { viewDocumentModalVisible = false },
         onDocumentAdd = {
-
+            viewModel.addDocument(it, context)
         },
         onDocumentClick = {
 
@@ -566,7 +574,32 @@ private fun BoxWithConstraintsScope.UI(
 
         }
     )
+}
 
+@ExperimentalFoundationApi
+@Composable
+private fun BoxWithConstraintsScope.DocumentModal(
+    documentState: DocumentState,
+    visible: Boolean = false,
+    onDismiss: () -> Unit,
+    onDocumentAdd: (uri: Uri?) -> Unit,
+    onDocumentClick: (String) -> Unit,
+    onDocumentRemove: (String) -> Unit
+) {
+    ViewDocumentModal(
+        existingDocumentList = documentState.existingDocumentList,
+        visible = visible,
+        onDismiss = onDismiss,
+        onDocumentAdd = onDocumentAdd,
+        onDocumentClick = onDocumentClick,
+        onDocumentRemove = onDocumentRemove
+    )
+
+    ProgressModal(
+        title = "Copying Document",
+        description = "Please Wait, Copying Document",
+        visible = documentState.showProgress
+    )
 }
 
 private fun shouldFocusCategory(

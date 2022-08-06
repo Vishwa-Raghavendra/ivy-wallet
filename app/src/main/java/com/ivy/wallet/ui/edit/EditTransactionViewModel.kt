@@ -1,5 +1,7 @@
 package com.ivy.wallet.ui.edit
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,6 +11,7 @@ import com.ivy.wallet.domain.action.account.AccountByIdAct
 import com.ivy.wallet.domain.action.account.AccountsAct
 import com.ivy.wallet.domain.action.category.CategoriesAct
 import com.ivy.wallet.domain.action.category.CategoryByIdAct
+import com.ivy.wallet.domain.action.edit.DocumentsAct
 import com.ivy.wallet.domain.action.transaction.TrnByIdAct
 import com.ivy.wallet.domain.data.CustomExchangeRateState
 import com.ivy.wallet.domain.data.TransactionType
@@ -32,6 +35,8 @@ import com.ivy.wallet.ui.loan.data.EditTransactionDisplayLoan
 import com.ivy.wallet.ui.widget.WalletBalanceReceiver
 import com.ivy.wallet.utils.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -63,7 +68,8 @@ class EditTransactionViewModel @Inject constructor(
     private val categoriesAct: CategoriesAct,
     private val trnByIdAct: TrnByIdAct,
     private val categoryByIdAct: CategoryByIdAct,
-    private val accountByIdAct: AccountByIdAct
+    private val accountByIdAct: AccountByIdAct,
+    private val documentsAct: DocumentsAct
 ) : ViewModel() {
 
     private val _transactionType = MutableLiveData<TransactionType>()
@@ -111,6 +117,9 @@ class EditTransactionViewModel @Inject constructor(
     private val _displayLoanHelper: MutableStateFlow<EditTransactionDisplayLoan> =
         MutableStateFlow(EditTransactionDisplayLoan())
     val displayLoanHelper = _displayLoanHelper.asStateFlow()
+
+    private val _documentState: MutableStateFlow<DocumentState> = MutableStateFlow(DocumentState())
+    val documentState = _documentState.readOnly()
 
     //This is used to when the transaction is associated with a loan/loan record,
     // used to indicate the background updating of loan/loanRecord data
@@ -658,6 +667,22 @@ class EditTransactionViewModel @Inject constructor(
     fun updateExchangeRate(exRate: Double?) {
         viewModelScope.launch {
             updateCustomExchangeRateState(exchangeRate = exRate, resetRate = exRate == null)
+        }
+    }
+
+    fun addDocument(documentURI: Uri?, context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            documentsAct.addDocument(
+                documentURI = documentURI,
+                context = context,
+                onProgressStart = {
+                    _documentState.value = documentState.value.copy(showProgress = true)
+                },
+                onProgressEnd = {
+                    delay(1000)
+                    _documentState.value = documentState.value.copy(showProgress = false)
+                }
+            )
         }
     }
 }

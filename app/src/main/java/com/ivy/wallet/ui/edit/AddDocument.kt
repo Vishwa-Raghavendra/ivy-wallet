@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.wallet.R
+import com.ivy.wallet.domain.data.core.Document
 import com.ivy.wallet.ui.IvyWalletPreview
 import com.ivy.wallet.ui.ivyWalletCtx
 import com.ivy.wallet.ui.theme.Gradient
@@ -37,7 +38,7 @@ import java.util.*
 
 @Composable
 fun AddDocument(
-    existingDocumentList: List<String> = emptyList(),
+    existingDocumentList: List<Document> = emptyList(),
     onClick: () -> Unit = {}
 ) {
     if (existingDocumentList.isNotEmpty()) {
@@ -79,12 +80,12 @@ private fun ViewDocuments(
 @Composable
 fun BoxWithConstraintsScope.ViewDocumentModal(
     id: UUID = UUID.randomUUID(),
-    existingDocumentList: List<String>,
+    documentList: List<Document>,
     visible: Boolean = false,
     onDismiss: () -> Unit,
     onDocumentAdd: (uri: Uri?) -> Unit,
-    onDocumentClick: (String) -> Unit,
-    onDocumentRemove: (String) -> Unit
+    onDocumentClick: (Document) -> Unit,
+    onDocumentRemove: (Document) -> Unit
 ) {
     IvyModal(
         id = id,
@@ -97,7 +98,7 @@ fun BoxWithConstraintsScope.ViewDocumentModal(
         }
     ) {
         ViewDocumentContents(
-            existingDocumentList,
+            documentList,
             onDocumentAdd = onDocumentAdd,
             onDocumentClick = onDocumentClick,
             onDocumentRemove = onDocumentRemove
@@ -108,10 +109,10 @@ fun BoxWithConstraintsScope.ViewDocumentModal(
 @ExperimentalFoundationApi
 @Composable
 private fun ColumnScope.ViewDocumentContents(
-    existingDocumentList: List<String>,
+    existingDocumentList: List<Document>,
     onDocumentAdd: (uri: Uri?) -> Unit,
-    onDocumentClick: (String) -> Unit,
-    onDocumentRemove: (String) -> Unit
+    onDocumentClick: (Document) -> Unit,
+    onDocumentRemove: (Document) -> Unit
 ) {
     val view = LocalView.current
     onScreenStart {
@@ -139,10 +140,10 @@ private fun ColumnScope.ViewDocumentContents(
 @ExperimentalFoundationApi
 @Composable
 private fun DocumentsListDisplay(
-    dataItems: List<String>,
+    dataItems: List<Document>,
     onDocumentAdd: (uri: Uri?) -> Unit,
-    onDocumentClick: (String) -> Unit,
-    onDocumentRemove: (String) -> Unit
+    onDocumentClick: (Document) -> Unit,
+    onDocumentRemove: (Document) -> Unit
 ) {
     val data = mutableListOf<Any>()
     data.add(AddNewDocument())
@@ -156,9 +157,9 @@ private fun DocumentsListDisplay(
         items = data
     ) {
         when (it) {
-            is String -> {
+            is Document -> {
                 DocumentDisplayItem(
-                    item = it,
+                    item = it.fileName,
                     onClick = {
                         onDocumentClick(it)
                     },

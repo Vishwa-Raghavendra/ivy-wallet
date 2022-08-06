@@ -13,7 +13,7 @@ import com.ivy.wallet.io.persistence.migration.*
         AccountEntity::class, TransactionEntity::class, CategoryEntity::class,
         SettingsEntity::class, PlannedPaymentRuleEntity::class,
         UserEntity::class, ExchangeRateEntity::class, BudgetEntity::class,
-        LoanEntity::class, LoanRecordEntity::class
+        LoanEntity::class, LoanRecordEntity::class, DocumentEntity::class
     ],
     autoMigrations = [
         AutoMigration(
@@ -22,7 +22,7 @@ import com.ivy.wallet.io.persistence.migration.*
             spec = IvyRoomDatabase.DeleteSEMigration::class
         )
     ],
-    version = 123,
+    version = 124,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)
@@ -46,6 +46,8 @@ abstract class IvyRoomDatabase : RoomDatabase() {
     abstract fun loanDao(): LoanDao
 
     abstract fun loanRecordDao(): LoanRecordDao
+
+    abstract fun documentsDao(): DocumentDao
 
     companion object {
         const val DB_NAME = "ivywallet.db"
@@ -73,7 +75,8 @@ abstract class IvyRoomDatabase : RoomDatabase() {
                     Migration118to119_Loans(),
                     Migration119to120_LoanTransactions(),
                     Migration120to121_DropWishlistItem(),
-                    Migration122to123_SubCategories()
+                    Migration122to123_SubCategories(),
+                    Migration123to124_DocumentsTable()
                 )
                 .build()
         }

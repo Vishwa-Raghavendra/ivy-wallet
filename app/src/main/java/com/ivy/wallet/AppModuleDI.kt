@@ -131,6 +131,9 @@ object AppModuleDI {
     fun provideTrnRecurringRuleDao(db: IvyRoomDatabase): PlannedPaymentRuleDao =
         db.plannedPaymentRuleDao()
 
+    @Provides
+    fun provideDocumentsDao(db: IvyRoomDatabase): DocumentDao = db.documentsDao()
+
 
     @Provides
     fun provideWalletAccountLogic(

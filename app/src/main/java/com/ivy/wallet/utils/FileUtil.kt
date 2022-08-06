@@ -5,8 +5,10 @@ import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.provider.OpenableColumns
+import android.webkit.MimeTypeMap
 import java.io.*
 import java.nio.charset.Charset
+import java.util.*
 
 @Deprecated("useless")
 fun saveFile(
@@ -85,14 +87,29 @@ private fun readFileContent(
     }
 }
 
-fun Context.getFileName(uri: Uri): String? = when (uri.scheme) {
-    ContentResolver.SCHEME_CONTENT -> getContentFileName(uri)
-    else -> uri.path?.let(::File)?.name
+fun Context.getFileName(uri: Uri, defaultFileName: String): String = when (uri.scheme) {
+    ContentResolver.SCHEME_CONTENT -> getContentFileName(uri, defaultFileName)
+    else -> uri.path?.let(::File)?.name ?: defaultFileName
 }
 
-private fun Context.getContentFileName(uri: Uri): String? = runCatching {
+fun Context.getFileName(uri: Uri) =
+    this.getContentFileName(uri, "file${System.currentTimeMillis()}")
+
+private fun Context.getContentFileName(uri: Uri, defaultFileName: String): String = runCatching {
     contentResolver.query(uri, null, null, null, null)?.use { cursor ->
         cursor.moveToFirst()
         return@use cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME).let(cursor::getString)
     }
-}.getOrNull()
+}.getOrElse {
+    defaultFileName
+}!!
+
+fun Uri.getMimeType(context: Context): String? {
+    return when (scheme) {
+        ContentResolver.SCHEME_CONTENT -> context.contentResolver.getType(this)
+        ContentResolver.SCHEME_FILE -> MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+            MimeTypeMap.getFileExtensionFromUrl(toString()).lowercase(Locale.US)
+        )
+        else -> null
+    }
+}

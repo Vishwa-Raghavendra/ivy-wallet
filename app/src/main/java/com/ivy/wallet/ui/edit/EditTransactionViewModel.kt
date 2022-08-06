@@ -11,7 +11,7 @@ import com.ivy.wallet.domain.action.account.AccountByIdAct
 import com.ivy.wallet.domain.action.account.AccountsAct
 import com.ivy.wallet.domain.action.category.CategoriesAct
 import com.ivy.wallet.domain.action.category.CategoryByIdAct
-import com.ivy.wallet.domain.action.edit.DocumentsAct
+import com.ivy.wallet.domain.action.edit.DocumentsLogic
 import com.ivy.wallet.domain.action.transaction.TrnByIdAct
 import com.ivy.wallet.domain.data.CustomExchangeRateState
 import com.ivy.wallet.domain.data.TransactionType
@@ -36,7 +36,6 @@ import com.ivy.wallet.ui.widget.WalletBalanceReceiver
 import com.ivy.wallet.utils.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -69,7 +68,7 @@ class EditTransactionViewModel @Inject constructor(
     private val trnByIdAct: TrnByIdAct,
     private val categoryByIdAct: CategoryByIdAct,
     private val accountByIdAct: AccountByIdAct,
-    private val documentsAct: DocumentsAct
+    private val documentsLogic: DocumentsLogic
 ) : ViewModel() {
 
     private val _transactionType = MutableLiveData<TransactionType>()
@@ -243,6 +242,11 @@ class EditTransactionViewModel @Inject constructor(
         _amount.value = transaction.amount.toDouble()
 
         updateCurrency(account = selectedAccount)
+
+        ioThread {
+            _documentState.value =
+                DocumentState(documentList = documentsLogic.findByTransactionId(transaction.id))
+        }
 
         _customExchangeRateState.value = if (transaction.toAccountId == null)
             CustomExchangeRateState()
@@ -672,17 +676,27 @@ class EditTransactionViewModel @Inject constructor(
 
     fun addDocument(documentURI: Uri?, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
-            documentsAct.addDocument(
-                documentURI = documentURI,
-                context = context,
-                onProgressStart = {
-                    _documentState.value = documentState.value.copy(showProgress = true)
-                },
-                onProgressEnd = {
-                    delay(1000)
-                    _documentState.value = documentState.value.copy(showProgress = false)
-                }
-            )
+
+            if (documentURI != null && loadedTransaction?.id != null) {
+                val doc = documentsLogic.addDocument(
+                    transactionId = loadedTransaction?.id!!,
+                    documentURI = documentURI,
+                    context = context,
+                    onProgressStart = {
+                        _documentState.value = documentState.value.copy(showProgress = true)
+                    },
+                    onProgressEnd = {
+                        //No - Op
+                    }
+                )
+
+                val newDocumentsList = _documentState.value.documentList + doc
+
+                _documentState.value = documentState.value.copy(
+                    showProgress = false,
+                    documentList = newDocumentsList
+                )
+            }
         }
     }
 }

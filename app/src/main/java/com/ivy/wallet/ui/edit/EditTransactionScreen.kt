@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.insets.navigationBarsPadding
@@ -27,10 +28,12 @@ import com.ivy.design.l0_system.style
 import com.ivy.design.utils.hideKeyboard
 import com.ivy.frp.view.navigation.navigation
 import com.ivy.wallet.R
+import com.ivy.wallet.domain.action.edit.DocumentsLogic
 import com.ivy.wallet.domain.data.CustomExchangeRateState
 import com.ivy.wallet.domain.data.TransactionType
 import com.ivy.wallet.domain.data.core.Account
 import com.ivy.wallet.domain.data.core.Category
+import com.ivy.wallet.domain.data.core.Document
 import com.ivy.wallet.domain.deprecated.logic.model.CreateAccountData
 import com.ivy.wallet.domain.deprecated.logic.model.CreateCategoryData
 import com.ivy.wallet.ui.*
@@ -45,6 +48,7 @@ import com.ivy.wallet.utils.convertUTCtoLocal
 import com.ivy.wallet.utils.getTrueDate
 import com.ivy.wallet.utils.onScreenStart
 import com.ivy.wallet.utils.timeNowLocal
+import java.io.File
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.math.roundToInt
@@ -289,7 +293,7 @@ private fun BoxWithConstraintsScope.UI(
 
             }
 
-            AddDocument(existingDocumentList = emptyList()) {
+            AddDocument(existingDocumentList = documentState.documentList) {
                 viewDocumentModalVisible = true
             }
         }
@@ -569,6 +573,21 @@ private fun BoxWithConstraintsScope.UI(
         },
         onDocumentClick = {
 
+            val documentDestinationFolder = File(
+                context.filesDir,
+                DocumentsLogic.DOCUMENT_FOLDER_NAME
+            )
+            val x = File(documentDestinationFolder, it.fileName)
+
+            val fileUri = FileProvider.getUriForFile(
+                (context as RootActivity),
+                context.getApplicationContext().packageName + ".provider",
+                x
+            )
+
+            (context as RootActivity).shareDocument(
+                fileUri = fileUri
+            )
         },
         onDocumentRemove = {
 
@@ -583,11 +602,11 @@ private fun BoxWithConstraintsScope.DocumentModal(
     visible: Boolean = false,
     onDismiss: () -> Unit,
     onDocumentAdd: (uri: Uri?) -> Unit,
-    onDocumentClick: (String) -> Unit,
-    onDocumentRemove: (String) -> Unit
+    onDocumentClick: (Document) -> Unit,
+    onDocumentRemove: (Document) -> Unit
 ) {
     ViewDocumentModal(
-        existingDocumentList = documentState.existingDocumentList,
+        documentList = documentState.documentList,
         visible = visible,
         onDismiss = onDismiss,
         onDocumentAdd = onDocumentAdd,

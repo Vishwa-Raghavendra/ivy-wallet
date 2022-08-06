@@ -1,0 +1,23 @@
+package com.ivy.wallet.io.persistence.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.ivy.wallet.io.persistence.data.DocumentEntity
+import java.util.*
+
+@Dao
+interface DocumentDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun save(value: DocumentEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun save(value: List<DocumentEntity>)
+
+    @Query("SELECT * FROM documents where transactionId=:transactionId")
+    suspend fun findByTransactionId(transactionId: UUID): List<DocumentEntity>
+
+    @Query("SELECT * FROM documents where id=:id")
+    suspend fun findById(id: UUID): DocumentEntity
+}

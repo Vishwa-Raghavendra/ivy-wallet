@@ -7,6 +7,7 @@ import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -502,6 +503,19 @@ class RootActivity : AppCompatActivity() {
                 action = Intent.ACTION_SEND
                 putExtra(Intent.EXTRA_STREAM, fileUri)
                 type = "application/zip"
+            }, null
+        )
+        startActivity(intent)
+    }
+
+    fun shareDocument(fileUri: Uri) {
+        val mimeType: String = fileUri.getMimeType(this.applicationContext) ?: "*/*"
+
+        val intent = Intent.createChooser(
+            Intent().apply {
+                action = Intent.ACTION_VIEW
+                flags = FLAG_GRANT_READ_URI_PERMISSION
+                setDataAndType(fileUri,mimeType)
             }, null
         )
         startActivity(intent)

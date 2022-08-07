@@ -133,6 +133,8 @@ class ExportZipLogic(
 
                 unzip(context, zipFileUri, cacheFolderPath)
 
+                copyDocuments(context, folderName, cacheFolderPath)
+
                 val filesArray = cacheFolderPath.listFiles()
 
                 onProgress(0.05)
@@ -189,6 +191,13 @@ class ExportZipLogic(
                 )
             }
         }
+    }
+
+    private fun copyDocuments(context: Context, folderName: String, cacheFolderPath: File) {
+        val sourceDocumentsFolder = File(cacheFolderPath, DocumentsLogic.DOCUMENT_FOLDER_NAME)
+        val targetDocumentsFolder = File(context.filesDir, DocumentsLogic.DOCUMENT_FOLDER_NAME)
+
+        sourceDocumentsFolder.copyRecursively(target = targetDocumentsFolder)
     }
 
     private suspend fun accommodateExistingAccountsAndCategories(jsonString: String?): String? {
@@ -257,6 +266,7 @@ class ExportZipLogic(
                 settingsDao.deleteAll()
                 settingsDao.save(completeData.settings)
             }
+            val documents = it.async { documentDao.save(completeData.documents) }
 
             sharedPrefs.putBoolean(
                 SharedPrefs.SHOW_NOTIFICATIONS,
@@ -281,6 +291,7 @@ class ExportZipLogic(
 
             plannedPayments.await()
             settings.await()
+            documents.await()
 
             onProgress(0.9)
         }

@@ -153,7 +153,7 @@ private fun DocumentsListDisplay(
         modifier = Modifier
             .padding(horizontal = 16.dp),
         horizontalMarginBetweenItems = 12.dp,
-        verticalMarginBetweenRows = 12.dp,
+        verticalMarginBetweenRows = 8.dp,
         items = data
     ) {
         when (it) {
@@ -241,7 +241,8 @@ private fun DocumentDisplayItem(
                 .padding(
                     start = if (selected) 12.dp else 12.dp,
                     end = if (selected) 20.dp else 24.dp
-                ),
+                )
+                .weight(1f, fill = false),
             text = item,
             style = UI.typo.b2.style(
                 color = if (selected)

@@ -17,6 +17,7 @@ import com.ivy.wallet.domain.data.CustomExchangeRateState
 import com.ivy.wallet.domain.data.TransactionType
 import com.ivy.wallet.domain.data.core.Account
 import com.ivy.wallet.domain.data.core.Category
+import com.ivy.wallet.domain.data.core.Document
 import com.ivy.wallet.domain.data.core.Transaction
 import com.ivy.wallet.domain.deprecated.logic.*
 import com.ivy.wallet.domain.deprecated.logic.currency.ExchangeRatesLogic
@@ -690,11 +691,23 @@ class EditTransactionViewModel @Inject constructor(
                     }
                 )
 
-                val newDocumentsList = _documentState.value.documentList + doc
+                loadedTransaction?.let { trans ->
+                    _documentState.value = documentState.value.copy(
+                        showProgress = false,
+                        documentList = documentsLogic.findByTransactionId(trans.id)
+                    )
+                }
+            }
+        }
+    }
 
+    fun deleteDocument(document: Document) {
+        viewModelScope.launch(Dispatchers.IO) {
+            documentsLogic.deleteDocument(document)
+
+            loadedTransaction?.let { trans ->
                 _documentState.value = documentState.value.copy(
-                    showProgress = false,
-                    documentList = newDocumentsList
+                    documentList = documentsLogic.findByTransactionId(trans.id)
                 )
             }
         }

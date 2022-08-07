@@ -20,4 +20,7 @@ interface DocumentDao {
 
     @Query("SELECT * FROM documents where id=:id")
     suspend fun findById(id: UUID): DocumentEntity
+
+    @Query("DELETE FROM documents where id=:id")
+    suspend fun deleteById(id: UUID)
 }

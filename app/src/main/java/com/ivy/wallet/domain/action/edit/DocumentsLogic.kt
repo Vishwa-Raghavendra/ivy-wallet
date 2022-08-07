@@ -28,6 +28,26 @@ class DocumentsLogic @Inject constructor(
         }
     }
 
+    suspend fun findById(id: UUID): Document {
+        return ioThread {
+            documentsDao.findById(id).toDomain()
+        }
+    }
+
+    suspend fun deleteDocument(document: Document): Document {
+        return ioThread {
+            documentsDao.deleteById(document.id)
+            deleteDocumentFromStorage(document)
+            document
+        }
+    }
+
+    private suspend fun deleteDocumentFromStorage(document: Document) {
+        val file = File(document.filePath)
+        if (file.exists())
+            file.delete()
+    }
+
     suspend fun addDocument(
         transactionId: UUID,
         documentURI: Uri,

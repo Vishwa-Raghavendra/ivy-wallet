@@ -590,7 +590,7 @@ private fun BoxWithConstraintsScope.UI(
             )
         },
         onDocumentRemove = {
-
+            viewModel.deleteDocument(it)
         }
     )
 }

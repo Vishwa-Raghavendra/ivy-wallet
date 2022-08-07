@@ -11,13 +11,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.insets.navigationBarsPadding
 import com.google.accompanist.insets.statusBarsPadding
 import com.ivy.design.l0_system.UI
@@ -32,6 +33,9 @@ import com.ivy.wallet.domain.data.core.Category
 import com.ivy.wallet.domain.deprecated.logic.model.CreateAccountData
 import com.ivy.wallet.domain.deprecated.logic.model.CreateCategoryData
 import com.ivy.wallet.ui.*
+import com.ivy.wallet.ui.documents.AddDocument
+import com.ivy.wallet.ui.documents.DocumentState
+import com.ivy.wallet.ui.documents.ShowDocumentModal
 import com.ivy.wallet.ui.edit.core.*
 import com.ivy.wallet.ui.loan.data.EditTransactionDisplayLoan
 import com.ivy.wallet.ui.theme.components.AddPrimaryAttributeButton
@@ -43,6 +47,7 @@ import com.ivy.wallet.utils.convertUTCtoLocal
 import com.ivy.wallet.utils.getTrueDate
 import com.ivy.wallet.utils.onScreenStart
 import com.ivy.wallet.utils.timeNowLocal
+import java.io.File
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.math.roundToInt
@@ -211,6 +216,7 @@ private fun BoxWithConstraintsScope.UI(
             if (customExchangeRateState.showCard) customExchangeRatePosition.roundToInt() else 0
         scrollState.animateScrollTo(scrollInt)
     }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -275,21 +281,18 @@ private fun BoxWithConstraintsScope.UI(
         }
         Spacer(Modifier.height(32.dp))
 
-        FlowRow(crossAxisSpacing = 16.dp) {
-            if (transactionType != TransactionType.TRANSFER) {
+        if (transactionType != TransactionType.TRANSFER) {
+            Category(
+                category = category,
+                onChooseCategory = {
+                    chooseCategoryModalVisible = true
+                }
+            )
+        }
+        Spacer(Modifier.height(16.dp))
 
-                Category(
-                    category = category,
-                    onChooseCategory = {
-                        chooseCategoryModalVisible = true
-                    }
-                )
-
-            }
-
-            AddDocument(existingDocumentList = documentState.documentList) {
-                viewDocumentModalVisible = true
-            }
+        AddDocument(existingDocumentList = documentState.documentList) {
+            viewDocumentModalVisible = true
         }
 
         Spacer(Modifier.height(32.dp))
@@ -555,9 +558,30 @@ private fun BoxWithConstraintsScope.UI(
         }
     )
 
+    val viewModel: EditTransactionViewModel = viewModel()
     ShowDocumentModal(
-        viewModel = viewModel(),
+        documentState = documentState,
         viewDocumentModalVisible = viewDocumentModalVisible,
+        onDocumentAdd = { fileUri, fileName ->
+            viewModel.addDocument(fileName, fileUri, context)
+        },
+        onDocumentRename = { document, fileName ->
+            viewModel.renameDocument(context, document, fileName)
+        },
+        onDocumentDelete = {
+            viewModel.deleteDocument(it)
+        },
+        onDocumentClick = {
+            val viewFileUri = FileProvider.getUriForFile(
+                (context as RootActivity),
+                context.getApplicationContext().packageName + ".provider",
+                File(it.filePath)
+            )
+
+            context.shareDocument(
+                fileUri = viewFileUri
+            )
+        },
         onModalDismiss = {
             viewDocumentModalVisible = false
         }

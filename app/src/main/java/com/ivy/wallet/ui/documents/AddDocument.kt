@@ -1,4 +1,4 @@
-package com.ivy.wallet.ui.edit
+package com.ivy.wallet.ui.documents
 
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi

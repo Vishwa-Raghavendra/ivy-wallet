@@ -1,26 +1,27 @@
-package com.ivy.wallet.ui.edit
+package com.ivy.wallet.ui.documents
 
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.FileProvider
 import com.ivy.design.utils.showKeyboard
-import com.ivy.wallet.ui.RootActivity
+import com.ivy.wallet.domain.data.core.Document
 import com.ivy.wallet.ui.theme.modal.ProgressModal
 import com.ivy.wallet.utils.getFileName
-import java.io.File
 
 @ExperimentalFoundationApi
 @Composable
 fun BoxWithConstraintsScope.ShowDocumentModal(
-    viewModel: EditTransactionViewModel,
+    documentState: DocumentState,
     viewDocumentModalVisible: Boolean,
+    onDocumentAdd: (Uri?, String) -> Unit,
+    onDocumentRename: (Document, String) -> Unit,
+    onDocumentDelete: (Document) -> Unit,
+    onDocumentClick: (Document) -> Unit,
     onModalDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val documentState by viewModel.documentState.collectAsState()
 
     var fileUri: Uri? by remember {
         mutableStateOf(null)
@@ -43,23 +44,11 @@ fun BoxWithConstraintsScope.ShowDocumentModal(
                     fileModalData = null
                 },
                 onFileRenamed = { fName ->
-                    viewModel.addDocument(fName, fileUri, context)
+                    onDocumentAdd(it, fName)
                 })
         },
-        onDocumentClick = {
-            val viewFileUri = FileProvider.getUriForFile(
-                (context as RootActivity),
-                context.getApplicationContext().packageName + ".provider",
-                File(it.filePath)
-            )
-
-            context.shareDocument(
-                fileUri = viewFileUri
-            )
-        },
-        onDocumentRemove = {
-            viewModel.deleteDocument(it)
-        },
+        onDocumentClick = onDocumentClick,
+        onDocumentRemove = onDocumentDelete,
         onDocumentLongClick = {
             fileModalData = FileNameModalData(
                 initialFileName = it.fileName,
@@ -68,7 +57,7 @@ fun BoxWithConstraintsScope.ShowDocumentModal(
                     fileModalData = null
                 },
                 onFileRenamed = { fName ->
-                    viewModel.renameDocument(context, it, fName)
+                    onDocumentRename(it, fName)
                 })
         }
     )

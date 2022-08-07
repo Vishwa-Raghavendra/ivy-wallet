@@ -41,6 +41,26 @@ class DocumentsLogic @Inject constructor(
         }
     }
 
+    suspend fun renameDocument(context: Context, document: Document, newFileName: String) {
+        ioThread {
+            val originalFile = File(document.filePath)
+            val docFolderPath = File(context.filesDir, DOCUMENT_FOLDER_NAME)
+            val destinationFolder = File(docFolderPath, applyDuplicateFilenameFix(newFileName))
+            rename(originalFile, destinationFolder)
+
+            documentsDao.save(
+                document.copy(
+                    filePath = destinationFolder.absolutePath,
+                    fileName = newFileName
+                ).toEntity()
+            )
+        }
+    }
+
+    private fun rename(from: File, to: File): Boolean {
+        return from.exists() && from.renameTo(to)
+    }
+
     private fun deleteDocumentFromStorage(document: Document) {
         val file = File(document.filePath)
         if (file.exists())

@@ -713,4 +713,16 @@ class EditTransactionViewModel @Inject constructor(
             }
         }
     }
+
+    fun renameDocument(context: Context, document: Document, newFileName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            documentsLogic.renameDocument(context, document, newFileName)
+
+            loadedTransaction?.let { trans ->
+                _documentState.value = documentState.value.copy(
+                    documentList = documentsLogic.findByTransactionId(trans.id)
+                )
+            }
+        }
+    }
 }

@@ -26,13 +26,6 @@ fun BoxWithConstraintsScope.ShowDocumentModal(
         mutableStateOf(null)
     }
 
-    val fileName by remember(fileUri) {
-        val name = fileUri?.let {
-            context.getFileName(it, " ")
-        } ?: ""
-        mutableStateOf(name)
-    }
-
     var fileModalData: FileNameModalData? by remember {
         mutableStateOf(null)
     }
@@ -66,6 +59,17 @@ fun BoxWithConstraintsScope.ShowDocumentModal(
         },
         onDocumentRemove = {
             viewModel.deleteDocument(it)
+        },
+        onDocumentLongClick = {
+            fileModalData = FileNameModalData(
+                initialFileName = it.fileName,
+                visible = true,
+                onDismiss = {
+                    fileModalData = null
+                },
+                onFileRenamed = { fName ->
+                    viewModel.renameDocument(context, it, fName)
+                })
         }
     )
 

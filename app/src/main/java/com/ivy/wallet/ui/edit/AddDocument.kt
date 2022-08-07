@@ -97,7 +97,8 @@ fun BoxWithConstraintsScope.ViewDocumentModal(
     onDismiss: () -> Unit,
     onDocumentAdd: (uri: Uri?) -> Unit,
     onDocumentClick: (Document) -> Unit,
-    onDocumentRemove: (Document) -> Unit
+    onDocumentRemove: (Document) -> Unit,
+    onDocumentLongClick: (Document) -> Unit = {},
 ) {
     IvyModal(
         id = id,
@@ -113,7 +114,8 @@ fun BoxWithConstraintsScope.ViewDocumentModal(
             documentList,
             onDocumentAdd = onDocumentAdd,
             onDocumentClick = onDocumentClick,
-            onDocumentRemove = onDocumentRemove
+            onDocumentRemove = onDocumentRemove,
+            onDocumentLongClick = onDocumentLongClick
         )
     }
 }
@@ -124,7 +126,8 @@ private fun ColumnScope.ViewDocumentContents(
     existingDocumentList: List<Document>,
     onDocumentAdd: (uri: Uri?) -> Unit,
     onDocumentClick: (Document) -> Unit,
-    onDocumentRemove: (Document) -> Unit
+    onDocumentRemove: (Document) -> Unit,
+    onDocumentLongClick: (Document) -> Unit,
 ) {
     val view = LocalView.current
     onScreenStart {
@@ -143,7 +146,8 @@ private fun ColumnScope.ViewDocumentContents(
         dataItems = existingDocumentList,
         onDocumentAdd = onDocumentAdd,
         onDocumentClick = onDocumentClick,
-        onDocumentRemove = onDocumentRemove
+        onDocumentRemove = onDocumentRemove,
+        onDocumentLongClick = onDocumentLongClick
     )
 
     Spacer(Modifier.height(100.dp))
@@ -155,7 +159,8 @@ private fun DocumentsListDisplay(
     dataItems: List<Document>,
     onDocumentAdd: (uri: Uri?) -> Unit,
     onDocumentClick: (Document) -> Unit,
-    onDocumentRemove: (Document) -> Unit
+    onDocumentRemove: (Document) -> Unit,
+    onDocumentLongClick: (Document) -> Unit
 ) {
     val data = mutableListOf<Any>()
     data.add(AddNewDocument())
@@ -176,7 +181,7 @@ private fun DocumentsListDisplay(
                         onDocumentClick(it)
                     },
                     onLongClick = {
-                        //Do Nothing
+                        onDocumentLongClick(it)
                     },
                     onDeselect = {
                         onDocumentRemove(it)
@@ -283,7 +288,7 @@ private fun DocumentDisplayItem(
 @Composable
 fun BoxWithConstraintsScope.FileNameModal(
     id: UUID = UUID.randomUUID(),
-    shouldShowKeyboard:Boolean = true,
+    shouldShowKeyboard: Boolean = true,
     visible: Boolean = false,
     initialFileName: String,
     onDismiss: () -> Unit,

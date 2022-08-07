@@ -146,14 +146,10 @@ class DocumentsLogic @Inject constructor(
                 defaultFileName = "file${System.currentTimeMillis()}"
             )
 
-        /**
-         * Added "file${System.currentTimeMillis()}_" prefix to destination folder path to accommodate
-         * duplicate files
-         */
         val documentDestinationFilePath = documentDestinationFolder.absolutePath.let {
             if (!it.endsWith(File.separator)) "$it${File.separator}"
             else it
-        } + "file${System.currentTimeMillis()}_" + documentFileName
+        } + applyDuplicateFilenameFix(documentFileName)
 
         return documentDestinationFilePath
     }
@@ -167,5 +163,19 @@ class DocumentsLogic @Inject constructor(
             uri = documentURI,
             defaultFileName = defaultFileName
         )
+    }
+
+    /**
+     * Added "_file${System.currentTimeMillis()}" suffix to destination folder path to accommodate
+     * duplicate files
+     */
+    private fun applyDuplicateFilenameFix(documentFileName: String): String {
+        val index = documentFileName.lastIndexOf(".")
+        val suffix = "_file${System.currentTimeMillis()}"
+
+        return if (index == -1)
+            return documentFileName + suffix
+        else
+            documentFileName.substring(0, index) + suffix + documentFileName.substring(index)
     }
 }

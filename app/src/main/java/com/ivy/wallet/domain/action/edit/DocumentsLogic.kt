@@ -126,12 +126,16 @@ class DocumentsLogic @Inject constructor(
                 defaultFileName = "file${System.currentTimeMillis()}"
             )
 
+        /**
+         * Added "file${System.currentTimeMillis()}_" prefix to destination folder path to accommodate
+         * duplicate files
+         */
         val documentDestinationFilePath = documentDestinationFolder.absolutePath.let {
             if (!it.endsWith(File.separator)) "$it${File.separator}"
             else it
-        } + documentFileName
+        } + "file${System.currentTimeMillis()}_" + documentFileName
 
-        return documentDestinationFilePath;
+        return documentDestinationFilePath
     }
 
     private fun getFilename(

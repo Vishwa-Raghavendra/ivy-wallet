@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import com.ivy.wallet.domain.data.core.Document
 import com.ivy.wallet.io.persistence.dao.DocumentDao
-import com.ivy.wallet.utils.getFileName
 import com.ivy.wallet.utils.ioThread
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -42,13 +41,14 @@ class DocumentsLogic @Inject constructor(
         }
     }
 
-    private suspend fun deleteDocumentFromStorage(document: Document) {
+    private fun deleteDocumentFromStorage(document: Document) {
         val file = File(document.filePath)
         if (file.exists())
             file.delete()
     }
 
     suspend fun addDocument(
+        documentFileName: String,
         transactionId: UUID,
         documentURI: Uri,
         context: Context,
@@ -58,19 +58,11 @@ class DocumentsLogic @Inject constructor(
         return ioThread {
             onProgressStart()
 
-            val documentFileName = getFilename(
-                context = context,
-                documentURI = documentURI,
-                defaultFileName = "file${System.currentTimeMillis()}"
-            )
-
             val documentDestinationFolder = File(context.filesDir, DOCUMENT_FOLDER_NAME)
             val documentDestinationFilePath = getDestinationFolderPath(
-                context = context,
-                documentURI = documentURI,
+                documentFileName = documentFileName,
                 documentDestinationFolder = documentDestinationFolder,
             )
-
 
             if (!documentDestinationFolder.exists()) {
                 documentDestinationFolder.mkdirs()
@@ -135,34 +127,15 @@ class DocumentsLogic @Inject constructor(
     }
 
     private fun getDestinationFolderPath(
-        context: Context,
-        documentURI: Uri,
+        documentFileName: String,
         documentDestinationFolder: File
     ): String {
-        val documentFileName =
-            getFilename(
-                context = context,
-                documentURI = documentURI,
-                defaultFileName = "file${System.currentTimeMillis()}"
-            )
-
         val documentDestinationFilePath = documentDestinationFolder.absolutePath.let {
             if (!it.endsWith(File.separator)) "$it${File.separator}"
             else it
         } + applyDuplicateFilenameFix(documentFileName)
 
         return documentDestinationFilePath
-    }
-
-    private fun getFilename(
-        context: Context,
-        documentURI: Uri,
-        defaultFileName: String
-    ): String {
-        return context.getFileName(
-            uri = documentURI,
-            defaultFileName = defaultFileName
-        )
     }
 
     /**

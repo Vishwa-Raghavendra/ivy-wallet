@@ -87,9 +87,12 @@ private fun readFileContent(
     }
 }
 
-fun Context.getFileName(uri: Uri, defaultFileName: String): String = when (uri.scheme) {
-    ContentResolver.SCHEME_CONTENT -> getContentFileName(uri, defaultFileName)
-    else -> uri.path?.let(::File)?.name ?: defaultFileName
+fun Context.getFileName(uri: Uri?, defaultFileName: String): String {
+    if (uri == null) return defaultFileName
+    return when (uri.scheme) {
+        ContentResolver.SCHEME_CONTENT -> getContentFileName(uri, defaultFileName)
+        else -> uri.path?.let(::File)?.name ?: defaultFileName
+    }
 }
 
 fun Context.getFileName(uri: Uri) =

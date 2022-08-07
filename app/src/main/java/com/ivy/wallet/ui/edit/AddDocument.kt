@@ -7,14 +7,24 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ivy.design.l0_system.UI
@@ -29,11 +39,13 @@ import com.ivy.wallet.ui.theme.Red
 import com.ivy.wallet.ui.theme.components.*
 import com.ivy.wallet.ui.theme.findContrastTextColor
 import com.ivy.wallet.ui.theme.modal.IvyModal
+import com.ivy.wallet.ui.theme.modal.ModalSave
 import com.ivy.wallet.ui.theme.modal.ModalTitle
 import com.ivy.wallet.utils.drawColoredShadow
 import com.ivy.wallet.utils.hideKeyboard
 import com.ivy.wallet.utils.onScreenStart
 import com.ivy.wallet.utils.thenIf
+import kotlinx.coroutines.delay
 import java.util.*
 
 @Composable
@@ -265,6 +277,92 @@ private fun DocumentDisplayItem(
         Spacer(Modifier.width(8.dp))
     }
 }
+
+@OptIn(ExperimentalComposeUiApi::class)
+@ExperimentalFoundationApi
+@Composable
+fun BoxWithConstraintsScope.FileNameModal(
+    id: UUID = UUID.randomUUID(),
+    shouldShowKeyboard:Boolean = true,
+    visible: Boolean = false,
+    initialFileName: String,
+    onDismiss: () -> Unit,
+    onFileRenamed: (String) -> Unit
+) {
+
+    var titleTextFieldValue by remember(initialFileName) {
+        mutableStateOf(
+            TextFieldValue(
+                initialFileName
+            )
+        )
+    }
+
+    var filename by remember(initialFileName) {
+        mutableStateOf(initialFileName)
+    }
+
+    val titleFocus = FocusRequester()
+
+    IvyModal(
+        id = id,
+        visible = visible,
+        dismiss = {
+            onDismiss()
+        },
+        PrimaryAction = {
+            ModalSave(
+                enabled = initialFileName.isNotEmpty()
+            ) {
+                onFileRenamed(filename)
+                onDismiss()
+            }
+        }
+    ) {
+
+        Spacer(Modifier.height(32.dp))
+
+        ModalTitle(
+            text = "Filename"
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        IvyTitleTextField(
+            modifier = Modifier
+                .padding(horizontal = 32.dp)
+                .focusRequester(titleFocus),
+            dividerModifier = Modifier
+                .padding(horizontal = 24.dp),
+            value = titleTextFieldValue,
+            hint = "Enter Filename",
+            keyboardOptions = KeyboardOptions(
+                autoCorrect = true,
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next,
+                capitalization = KeyboardCapitalization.Sentences
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = {
+
+                }
+            )
+        ) {
+            titleTextFieldValue = it
+            filename = it.text
+        }
+
+        val keyboard = LocalSoftwareKeyboardController.current
+        LaunchedEffect(titleFocus) {
+            if (shouldShowKeyboard) {
+                titleFocus.requestFocus()
+                delay(100) // Make sure you have delay here
+                keyboard?.show()
+            }
+        }
+    }
+}
+
 
 private class AddNewDocument
 

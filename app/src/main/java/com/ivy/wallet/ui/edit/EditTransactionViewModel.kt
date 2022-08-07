@@ -675,11 +675,12 @@ class EditTransactionViewModel @Inject constructor(
         }
     }
 
-    fun addDocument(documentURI: Uri?, context: Context) {
+    fun addDocument(documentFileName: String, documentURI: Uri?, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
 
             if (documentURI != null && loadedTransaction?.id != null) {
                 val doc = documentsLogic.addDocument(
+                    documentFileName = documentFileName,
                     transactionId = loadedTransaction?.id!!,
                     documentURI = documentURI,
                     context = context,

@@ -1,6 +1,5 @@
 package com.ivy.wallet.ui.edit
 
-import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,13 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.flowlayout.FlowRow
 import com.google.accompanist.insets.navigationBarsPadding
@@ -32,7 +29,6 @@ import com.ivy.wallet.domain.data.CustomExchangeRateState
 import com.ivy.wallet.domain.data.TransactionType
 import com.ivy.wallet.domain.data.core.Account
 import com.ivy.wallet.domain.data.core.Category
-import com.ivy.wallet.domain.data.core.Document
 import com.ivy.wallet.domain.deprecated.logic.model.CreateAccountData
 import com.ivy.wallet.domain.deprecated.logic.model.CreateCategoryData
 import com.ivy.wallet.ui.*
@@ -47,7 +43,6 @@ import com.ivy.wallet.utils.convertUTCtoLocal
 import com.ivy.wallet.utils.getTrueDate
 import com.ivy.wallet.utils.onScreenStart
 import com.ivy.wallet.utils.timeNowLocal
-import java.io.File
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.math.roundToInt
@@ -560,56 +555,12 @@ private fun BoxWithConstraintsScope.UI(
         }
     )
 
-    val viewModel: EditTransactionViewModel = viewModel()
-    val context = LocalContext.current
-
-    DocumentModal(
-        documentState = documentState,
-        visible = viewDocumentModalVisible,
-        onDismiss = { viewDocumentModalVisible = false },
-        onDocumentAdd = {
-            viewModel.addDocument(it, context)
-        },
-        onDocumentClick = {
-            val fileUri = FileProvider.getUriForFile(
-                (context as RootActivity),
-                context.getApplicationContext().packageName + ".provider",
-                File(it.filePath)
-            )
-
-            context.shareDocument(
-                fileUri = fileUri
-            )
-        },
-        onDocumentRemove = {
-            viewModel.deleteDocument(it)
+    ShowDocumentModal(
+        viewModel = viewModel(),
+        viewDocumentModalVisible = viewDocumentModalVisible,
+        onModalDismiss = {
+            viewDocumentModalVisible = false
         }
-    )
-}
-
-@ExperimentalFoundationApi
-@Composable
-private fun BoxWithConstraintsScope.DocumentModal(
-    documentState: DocumentState,
-    visible: Boolean = false,
-    onDismiss: () -> Unit,
-    onDocumentAdd: (uri: Uri?) -> Unit,
-    onDocumentClick: (Document) -> Unit,
-    onDocumentRemove: (Document) -> Unit
-) {
-    ViewDocumentModal(
-        documentList = documentState.documentList,
-        visible = visible,
-        onDismiss = onDismiss,
-        onDocumentAdd = onDocumentAdd,
-        onDocumentClick = onDocumentClick,
-        onDocumentRemove = onDocumentRemove
-    )
-
-    ProgressModal(
-        title = "Copying Document",
-        description = "Please Wait, Copying Document",
-        visible = documentState.showProgress
     )
 }
 

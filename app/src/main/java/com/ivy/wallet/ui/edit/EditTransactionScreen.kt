@@ -28,7 +28,6 @@ import com.ivy.design.l0_system.style
 import com.ivy.design.utils.hideKeyboard
 import com.ivy.frp.view.navigation.navigation
 import com.ivy.wallet.R
-import com.ivy.wallet.domain.action.edit.DocumentsLogic
 import com.ivy.wallet.domain.data.CustomExchangeRateState
 import com.ivy.wallet.domain.data.TransactionType
 import com.ivy.wallet.domain.data.core.Account
@@ -572,20 +571,13 @@ private fun BoxWithConstraintsScope.UI(
             viewModel.addDocument(it, context)
         },
         onDocumentClick = {
-
-            val documentDestinationFolder = File(
-                context.filesDir,
-                DocumentsLogic.DOCUMENT_FOLDER_NAME
-            )
-            val x = File(documentDestinationFolder, it.fileName)
-
             val fileUri = FileProvider.getUriForFile(
                 (context as RootActivity),
                 context.getApplicationContext().packageName + ".provider",
-                x
+                File(it.filePath)
             )
 
-            (context as RootActivity).shareDocument(
+            context.shareDocument(
                 fileUri = fileUri
             )
         },

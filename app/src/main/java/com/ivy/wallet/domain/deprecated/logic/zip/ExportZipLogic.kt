@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.core.net.toUri
 import com.google.gson.*
 import com.google.gson.reflect.TypeToken
+import com.ivy.wallet.domain.action.edit.DocumentsLogic
 import com.ivy.wallet.domain.data.IvyWalletCompleteData
 import com.ivy.wallet.domain.deprecated.logic.csv.model.ImportResult
 import com.ivy.wallet.io.persistence.SharedPrefs
@@ -31,6 +32,7 @@ class ExportZipLogic(
     private val plannedPaymentRuleDao: PlannedPaymentRuleDao,
     private val settingsDao: SettingsDao,
     private val transactionDao: TransactionDao,
+    private val documentDao: DocumentDao,
     private val sharedPrefs: SharedPrefs,
 ) {
     suspend fun exportToFile(
@@ -39,7 +41,7 @@ class ExportZipLogic(
     ) {
         val jsonString = generateJsonString()
         val file = createJsonDataFile(context, jsonString)
-        zip(context = context, zipFileUri, listOf(file))
+        zip(context = context, zipFileUri, listOf(file, documentsFolderPath(context)))
         clearCacheDir(context)
     }
 
@@ -54,6 +56,11 @@ class ExportZipLogic(
         return file
     }
 
+    private fun documentsFolderPath(context: Context): File {
+        val folderName = DocumentsLogic.DOCUMENT_FOLDER_NAME
+        return File(context.filesDir, folderName)
+    }
+
     private suspend fun generateJsonString(): String {
         return scopedIOThread {
             val accounts = it.async { accountDao.findAll() }
@@ -66,6 +73,7 @@ class ExportZipLogic(
             val settings = it.async { settingsDao.findAll() }
             val transactions = it.async { transactionDao.findAll() }
             val sharedPrefs = it.async { getSharedPrefsData() }
+            val documents = it.async { documentDao.findAll() }
 
             val gson = GsonBuilder().registerTypeAdapter(
                 LocalDateTime::class.java, object : JsonSerializer<LocalDateTime?> {
@@ -88,6 +96,7 @@ class ExportZipLogic(
                 plannedPaymentRules = plannedPaymentRules.await(),
                 settings = settings.await(),
                 transactions = transactions.await(),
+                documents = documents.await(),
                 sharedPrefs = sharedPrefs.await()
             )
 
@@ -266,7 +275,8 @@ class ExportZipLogic(
 
             sharedPrefs.putBoolean(
                 SharedPrefs.TRANSFERS_AS_INCOME_EXPENSE,
-                (completeData.sharedPrefs[SharedPrefs.TRANSFERS_AS_INCOME_EXPENSE] ?: "false").toBoolean()
+                (completeData.sharedPrefs[SharedPrefs.TRANSFERS_AS_INCOME_EXPENSE]
+                    ?: "false").toBoolean()
             )
 
             plannedPayments.await()

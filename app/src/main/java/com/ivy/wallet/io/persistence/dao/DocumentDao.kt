@@ -18,6 +18,9 @@ interface DocumentDao {
     @Query("SELECT * FROM documents where transactionId=:transactionId")
     suspend fun findByTransactionId(transactionId: UUID): List<DocumentEntity>
 
+    @Query("SELECT * FROM documents")
+    suspend fun findAll(): List<DocumentEntity>
+
     @Query("SELECT * FROM documents where id=:id")
     suspend fun findById(id: UUID): DocumentEntity
 

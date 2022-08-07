@@ -728,6 +728,7 @@ object AppModuleDI {
         plannedPaymentRuleDao: PlannedPaymentRuleDao,
         settingsDao: SettingsDao,
         transactionDao: TransactionDao,
+        documentDao: DocumentDao,
         sharedPrefs: SharedPrefs
     ): ExportZipLogic {
         return ExportZipLogic(
@@ -739,6 +740,7 @@ object AppModuleDI {
             plannedPaymentRuleDao,
             settingsDao,
             transactionDao,
+            documentDao,
             sharedPrefs
         )
     }

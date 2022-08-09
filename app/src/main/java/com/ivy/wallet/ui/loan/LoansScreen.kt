@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.insets.systemBarsPadding
 import com.ivy.design.l0_system.UI
@@ -29,12 +31,14 @@ import com.ivy.wallet.domain.data.core.Loan
 import com.ivy.wallet.ui.IvyWalletPreview
 import com.ivy.wallet.ui.LoanDetails
 import com.ivy.wallet.ui.Loans
+import com.ivy.wallet.ui.RootActivity
 import com.ivy.wallet.ui.loan.data.DisplayLoan
 import com.ivy.wallet.ui.theme.*
 import com.ivy.wallet.ui.theme.components.*
 import com.ivy.wallet.ui.theme.modal.LoanModal
 import com.ivy.wallet.utils.getDefaultFIATCurrency
 import com.ivy.wallet.utils.onScreenStart
+import java.io.File
 
 @Composable
 fun BoxWithConstraintsScope.LoansScreen(screen: Loans) {
@@ -58,6 +62,7 @@ private fun BoxWithConstraintsScope.UI(
     state: LoanScreenState = LoanScreenState()
 ) {
     val nav = navigation()
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -148,6 +153,27 @@ private fun BoxWithConstraintsScope.UI(
         onEditLoan = { _, _ -> },
         dismiss = {
             onEventHandler.invoke(LoanScreenEvent.OnLoanModalDismiss)
+        },
+        documentState = state.documentState,
+        onDocumentAdd = { fileUri, fileName ->
+            onEventHandler.invoke(LoanScreenEvent.OnDocumentAdd(fileName, fileUri, context))
+        },
+        onDocumentRename = { document, fileName ->
+            onEventHandler.invoke(LoanScreenEvent.OnDocumentRename(document, fileName, context))
+        },
+        onDocumentDelete = {
+            onEventHandler.invoke(LoanScreenEvent.OnDocumentDelete(it))
+        },
+        onDocumentClick = {
+            val viewFileUri = FileProvider.getUriForFile(
+                (context as RootActivity),
+                context.getApplicationContext().packageName + ".provider",
+                File(it.filePath)
+            )
+
+            context.shareDocument(
+                fileUri = viewFileUri
+            )
         },
     )
 }

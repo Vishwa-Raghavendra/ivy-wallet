@@ -1,5 +1,7 @@
 package com.ivy.wallet.ui.theme.modal
 
+import android.net.Uri
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,10 +30,14 @@ import com.ivy.wallet.R
 import com.ivy.wallet.domain.data.IvyCurrency
 import com.ivy.wallet.domain.data.LoanType
 import com.ivy.wallet.domain.data.core.Account
+import com.ivy.wallet.domain.data.core.Document
 import com.ivy.wallet.domain.data.core.Loan
 import com.ivy.wallet.domain.deprecated.logic.model.CreateAccountData
 import com.ivy.wallet.domain.deprecated.logic.model.CreateLoanData
 import com.ivy.wallet.ui.IvyWalletPreview
+import com.ivy.wallet.ui.documents.AddDocument
+import com.ivy.wallet.ui.documents.DocumentState
+import com.ivy.wallet.ui.documents.ShowDocumentModal
 import com.ivy.wallet.ui.theme.*
 import com.ivy.wallet.ui.theme.components.ItemIconSDefaultIcon
 import com.ivy.wallet.ui.theme.components.IvyCheckboxWithText
@@ -55,15 +61,20 @@ data class LoanModalData(
     val id: UUID = UUID.randomUUID()
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BoxWithConstraintsScope.LoanModal(
     accounts: List<Account> = emptyList(),
+    documentState: DocumentState = DocumentState.empty(),
     onCreateAccount: (CreateAccountData) -> Unit = {},
-
     modal: LoanModalData?,
     onCreateLoan: (CreateLoanData) -> Unit,
     onEditLoan: (Loan, Boolean) -> Unit,
     onPerformCalculations: () -> Unit = {},
+    onDocumentAdd: (Uri?, String) -> Unit = { _, _ -> },
+    onDocumentRename: (Document, String) -> Unit = { _, _ -> },
+    onDocumentDelete: (Document) -> Unit = {},
+    onDocumentClick: (Document) -> Unit = {},
     dismiss: () -> Unit,
 ) {
     val loan = modal?.loan
@@ -102,6 +113,7 @@ fun BoxWithConstraintsScope.LoanModal(
     }
 
     var accountModalData: AccountModalData? by remember { mutableStateOf(null) }
+    var viewDocumentModalVisible by remember { mutableStateOf(false) }
 
 
     IvyModal(
@@ -211,7 +223,24 @@ fun BoxWithConstraintsScope.LoanModal(
             childrenTestTag = "amount_modal_account"
         )
 
+        Spacer(Modifier.height(24.dp))
+
+        Text(
+            modifier = Modifier.padding(horizontal = 32.dp),
+            text = "Documents",
+            style = UI.typo.b2.style(
+                color = UI.colors.pureInverse,
+                fontWeight = FontWeight.ExtraBold
+            )
+        )
+
         Spacer(Modifier.height(16.dp))
+
+        AddDocument(existingDocumentList = documentState.documentList) {
+            viewDocumentModalVisible = true
+        }
+
+        Spacer(Modifier.height(24.dp))
 
         IvyCheckboxWithText(
             modifier = Modifier
@@ -304,6 +333,18 @@ fun BoxWithConstraintsScope.LoanModal(
         )
         accountChangeModal = false
     }
+
+    ShowDocumentModal(
+        documentState = documentState,
+        viewDocumentModalVisible = viewDocumentModalVisible,
+        onDocumentAdd = onDocumentAdd,
+        onDocumentRename = onDocumentRename,
+        onDocumentDelete = onDocumentDelete,
+        onDocumentClick = onDocumentClick,
+        onModalDismiss = {
+            viewDocumentModalVisible = false
+        }
+    )
 }
 
 @Composable

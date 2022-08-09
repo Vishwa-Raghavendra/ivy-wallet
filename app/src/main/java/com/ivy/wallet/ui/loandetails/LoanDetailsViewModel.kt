@@ -1,15 +1,15 @@
 package com.ivy.wallet.ui.loandetails
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ivy.frp.test.TestIdlingResource
 import com.ivy.frp.view.navigation.Navigation
 import com.ivy.wallet.domain.action.account.AccountsAct
+import com.ivy.wallet.domain.action.edit.DocumentsLogic
 import com.ivy.wallet.domain.action.loan.LoanByIdAct
-import com.ivy.wallet.domain.data.core.Account
-import com.ivy.wallet.domain.data.core.Loan
-import com.ivy.wallet.domain.data.core.LoanRecord
-import com.ivy.wallet.domain.data.core.Transaction
+import com.ivy.wallet.domain.data.core.*
 import com.ivy.wallet.domain.deprecated.logic.AccountCreator
 import com.ivy.wallet.domain.deprecated.logic.LoanCreator
 import com.ivy.wallet.domain.deprecated.logic.LoanRecordCreator
@@ -21,10 +21,13 @@ import com.ivy.wallet.domain.event.AccountsUpdatedEvent
 import com.ivy.wallet.io.persistence.dao.*
 import com.ivy.wallet.ui.IvyWalletCtx
 import com.ivy.wallet.ui.LoanDetails
+import com.ivy.wallet.ui.documents.DocumentState
 import com.ivy.wallet.ui.loan.data.DisplayLoanRecord
 import com.ivy.wallet.utils.computationThread
 import com.ivy.wallet.utils.ioThread
+import com.ivy.wallet.utils.readOnly
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -46,7 +49,8 @@ class LoanDetailsViewModel @Inject constructor(
     private val loanTransactionsLogic: LoanTransactionsLogic,
     private val nav: Navigation,
     private val accountsAct: AccountsAct,
-    private val loanByIdAct: LoanByIdAct
+    private val loanByIdAct: LoanByIdAct,
+    private val documentsLogic: DocumentsLogic
 ) : ViewModel() {
 
     private val _baseCurrency = MutableStateFlow("")
@@ -74,6 +78,9 @@ class LoanDetailsViewModel @Inject constructor(
 
     private val _createLoanTransaction = MutableStateFlow(false)
     val createLoanTransaction = _createLoanTransaction.asStateFlow()
+
+    private val _loanDocumentState = MutableStateFlow<DocumentState>(DocumentState.empty())
+    val loanDocumentState = _loanDocumentState.readOnly()
 
     private var defaultCurrencyCode = ""
 
@@ -103,6 +110,9 @@ class LoanDetailsViewModel @Inject constructor(
                 _selectedLoanAccount.value?.let { acc ->
                     _baseCurrency.value = acc.currency ?: defaultCurrencyCode
                 }
+
+                val loanDocuments = documentsLogic.findByTransactionId(loan.id)
+                _loanDocumentState.value = DocumentState(documentList = loanDocuments)
             }
 
             computationThread {
@@ -311,6 +321,51 @@ class LoanDetailsViewModel @Inject constructor(
             accounts.find { acc ->
                 acc.id == uuid
             }
+        }
+    }
+
+    fun addDocument(documentFileName: String, documentURI: Uri?, context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (documentURI != null && loan.value?.id != null) {
+                val doc = documentsLogic.addDocument(
+                    documentFileName = documentFileName,
+                    transactionId = loan.value?.id!!,
+                    documentURI = documentURI,
+                    context = context,
+                    onProgressStart = {
+                        _loanDocumentState.value =
+                            _loanDocumentState.value.copy(showProgress = true)
+                    },
+                    onProgressEnd = {
+                        _loanDocumentState.value =
+                            _loanDocumentState.value.copy(showProgress = false)
+                    }
+                )
+                updateDocumentsList()
+            }
+        }
+    }
+
+    fun deleteDocument(document: Document) {
+        viewModelScope.launch(Dispatchers.IO) {
+            documentsLogic.deleteDocument(document)
+            updateDocumentsList()
+        }
+    }
+
+    fun renameDocument(context: Context, document: Document, newFileName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            documentsLogic.renameDocument(context, document, newFileName)
+            updateDocumentsList()
+        }
+    }
+
+    //Update Document List
+    private suspend fun updateDocumentsList() {
+        loan.value?.let { l ->
+            _loanDocumentState.value = _loanDocumentState.value.copy(
+                documentList = documentsLogic.findByTransactionId(l.id)
+            )
         }
     }
 }

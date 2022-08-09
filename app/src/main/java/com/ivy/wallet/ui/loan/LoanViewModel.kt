@@ -1,12 +1,16 @@
 package com.ivy.wallet.ui.loan
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ivy.frp.test.TestIdlingResource
 import com.ivy.wallet.domain.action.account.AccountsAct
 import com.ivy.wallet.domain.action.category.CategoriesAct
+import com.ivy.wallet.domain.action.edit.DocumentsLogic
 import com.ivy.wallet.domain.action.loan.LoansAct
 import com.ivy.wallet.domain.data.core.Account
+import com.ivy.wallet.domain.data.core.Document
 import com.ivy.wallet.domain.data.core.Loan
 import com.ivy.wallet.domain.deprecated.logic.AccountCreator
 import com.ivy.wallet.domain.deprecated.logic.LoanCreator
@@ -20,6 +24,7 @@ import com.ivy.wallet.io.persistence.dao.AccountDao
 import com.ivy.wallet.io.persistence.dao.LoanDao
 import com.ivy.wallet.io.persistence.dao.LoanRecordDao
 import com.ivy.wallet.io.persistence.dao.SettingsDao
+import com.ivy.wallet.ui.documents.DocumentState
 import com.ivy.wallet.ui.loan.data.DisplayLoan
 import com.ivy.wallet.ui.theme.modal.LoanModalData
 import com.ivy.wallet.utils.format
@@ -48,7 +53,8 @@ class LoanViewModel @Inject constructor(
     private val loanTransactionsLogic: LoanTransactionsLogic,
     private val loansAct: LoansAct,
     private val accountsAct: AccountsAct,
-    private val categoriesAct: CategoriesAct
+    private val categoriesAct: CategoriesAct,
+    private val documentsLogic: DocumentsLogic
 ) : ViewModel() {
 
     private val _baseCurrencyCode = MutableStateFlow(getDefaultFIATCurrency().currencyCode)
@@ -67,6 +73,8 @@ class LoanViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(LoanScreenState())
     val state: StateFlow<LoanScreenState> = _state
+
+    private var loanId: UUID = UUID.randomUUID()
 
     fun start() {
         viewModelScope.launch(Dispatchers.Default) {
@@ -129,7 +137,7 @@ class LoanViewModel @Inject constructor(
         viewModelScope.launch {
             TestIdlingResource.increment()
 
-            val uuid = loanCreator.create(data) {
+            val uuid = loanCreator.create(data, loanId = loanId) {
                 start()
             }
 
@@ -215,6 +223,31 @@ class LoanViewModel @Inject constructor(
         return amount
     }
 
+    private suspend fun addDocument(
+        documentFileName: String,
+        documentURI: Uri?,
+        context: Context
+    ) {
+        if (documentURI == null) return
+
+        documentsLogic.addDocument(
+            documentFileName = documentFileName,
+            transactionId = loanId,
+            documentURI = documentURI,
+            context = context,
+            onProgressStart = {
+                val docState = _state.value.documentState.enableProgressAndGet()
+                _state.value = _state.value.copy(documentState = docState)
+            },
+            onProgressEnd = {
+                val docState = _state.value.documentState.disableProgressAndGet()
+                _state.value = _state.value.copy(documentState = docState)
+            }
+        )
+
+        updateDocumentsList()
+    }
+
     fun onEvent(event: LoanScreenEvent) {
         viewModelScope.launch(Dispatchers.Default) {
             when (event) {
@@ -229,6 +262,7 @@ class LoanViewModel @Inject constructor(
                             selectedAccount = selectedAccount.value
                         )
                     )
+                    updateLoanId()
                 }
                 is LoanScreenEvent.OnLoanModalDismiss -> {
                     _state.value = _state.value.copy(
@@ -249,8 +283,43 @@ class LoanViewModel @Inject constructor(
                 is LoanScreenEvent.OnCreateAccount -> {
                     createAccount(event.accountData)
                 }
+                is LoanScreenEvent.OnDocumentAdd -> {
+                    addDocument(event.documentFileName, event.documentURI, event.context)
+                }
+                is LoanScreenEvent.OnDocumentRename -> {
+                    renameDocument(event.newFileName,event.document,event.context)
+                }
+                is LoanScreenEvent.OnDocumentDelete -> {
+                    deleteDocument(event.document)
+                }
             }
         }
+    }
+
+    private suspend fun deleteDocument(document: Document) {
+        documentsLogic.deleteDocument(document)
+        updateDocumentsList()
+    }
+
+
+    private suspend fun updateDocumentsList(){
+        //Update Document List
+        _state.value = _state.value.copy(
+            documentState = _state.value.documentState.copy(
+                documentList = documentsLogic.findByTransactionId(
+                    loanId
+                )
+            )
+        )
+    }
+
+    private suspend fun renameDocument(newFileName: String, document: Document, context: Context) {
+        documentsLogic.renameDocument(context, document, newFileName)
+        updateDocumentsList()
+    }
+
+    private fun updateLoanId() {
+        loanId = UUID.randomUUID()
     }
 }
 
@@ -260,7 +329,8 @@ data class LoanScreenState(
     val accounts: List<Account> = emptyList(),
     val selectedAccount: Account? = null,
     val loanModalData: LoanModalData? = null,
-    val reorderModalVisible: Boolean = false
+    val reorderModalVisible: Boolean = false,
+    val documentState: DocumentState = DocumentState.empty()
 )
 
 sealed class LoanScreenEvent {
@@ -268,6 +338,21 @@ sealed class LoanScreenEvent {
     data class OnReordered(val reorderedList: List<DisplayLoan>) : LoanScreenEvent()
     data class OnCreateAccount(val accountData: CreateAccountData) : LoanScreenEvent()
     data class OnReOrderModalShow(val show: Boolean) : LoanScreenEvent()
+
+    data class OnDocumentAdd(
+        val documentFileName: String,
+        val documentURI: Uri?,
+        val context: Context
+    ) : LoanScreenEvent()
+
+    data class OnDocumentRename(
+        val document: Document,
+        val newFileName: String,
+        val context: Context
+    ) : LoanScreenEvent()
+
+    data class OnDocumentDelete(val document: Document) : LoanScreenEvent()
+
     object OnAddLoan : LoanScreenEvent()
     object OnLoanModalDismiss : LoanScreenEvent()
 }

@@ -50,8 +50,8 @@ import java.util.*
 
 @Composable
 fun AddDocument(
-    existingDocumentList: List<Document> = emptyList(),
-    onClick: () -> Unit = {}
+    existingDocumentList: List<Document>,
+    onClick: () -> Unit
 ) {
     if (existingDocumentList.isNotEmpty()) {
         ViewDocuments(onClick = onClick)
@@ -375,6 +375,8 @@ private class AddNewDocument
 @Composable
 fun PreviewAddDocument() {
     IvyWalletPreview {
-        AddDocument()
+        AddDocument(emptyList()) {
+
+        }
     }
 }

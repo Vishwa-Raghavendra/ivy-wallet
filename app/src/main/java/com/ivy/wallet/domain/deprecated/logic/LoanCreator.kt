@@ -16,13 +16,14 @@ class LoanCreator(
 ) {
     suspend fun create(
         data: CreateLoanData,
+        loanId: UUID = UUID.randomUUID(),
         onRefreshUI: suspend (Loan) -> Unit
     ): UUID? {
         val name = data.name
         if (name.isBlank()) return null
         if (data.amount <= 0) return null
 
-        var loanId: UUID? = null
+//        var loanId: UUID? = null
 
         try {
             paywallLogic.protectAddWithPaywall(
@@ -30,6 +31,7 @@ class LoanCreator(
             ) {
                 val newItem = ioThread {
                     val item = Loan(
+                        id = loanId,
                         name = name.trim(),
                         amount = data.amount,
                         type = data.type,
@@ -39,7 +41,6 @@ class LoanCreator(
                         isSynced = false,
                         accountId = data.account?.id
                     )
-                    loanId = item.id
                     dao.save(item.toEntity())
                     item
                 }

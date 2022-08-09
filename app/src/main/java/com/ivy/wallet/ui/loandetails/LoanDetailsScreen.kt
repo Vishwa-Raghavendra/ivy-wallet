@@ -15,12 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.insets.statusBarsHeight
 import com.ivy.design.l0_system.UI
@@ -39,13 +41,16 @@ import com.ivy.wallet.domain.deprecated.logic.model.EditLoanRecordData
 import com.ivy.wallet.ui.ItemStatistic
 import com.ivy.wallet.ui.IvyWalletPreview
 import com.ivy.wallet.ui.LoanDetails
+import com.ivy.wallet.ui.RootActivity
 import com.ivy.wallet.ui.component.transaction.TypeAmountCurrency
+import com.ivy.wallet.ui.documents.DocumentState
 import com.ivy.wallet.ui.loan.data.DisplayLoanRecord
 import com.ivy.wallet.ui.statistic.level2.ItemStatisticToolbar
 import com.ivy.wallet.ui.theme.*
 import com.ivy.wallet.ui.theme.components.*
 import com.ivy.wallet.ui.theme.modal.*
 import com.ivy.wallet.utils.*
+import java.io.File
 import java.util.*
 
 @Composable
@@ -60,6 +65,7 @@ fun BoxWithConstraintsScope.LoanDetailsScreen(screen: LoanDetails) {
     val accounts by viewModel.accounts.collectAsState()
     val selectedLoanAccount by viewModel.selectedLoanAccount.collectAsState()
     val createLoanTransaction by viewModel.createLoanTransaction.collectAsState()
+    val loanDocumentState by viewModel.loanDocumentState.collectAsState()
 
     onScreenStart {
         viewModel.start(screen = screen)
@@ -74,6 +80,7 @@ fun BoxWithConstraintsScope.LoanDetailsScreen(screen: LoanDetails) {
         accounts = accounts,
         selectedLoanAccount = selectedLoanAccount,
         createLoanTransaction = createLoanTransaction,
+        loanDocumentState = loanDocumentState,
 
         onEditLoan = viewModel::editLoan,
         onCreateLoanRecord = viewModel::createLoanRecord,
@@ -95,6 +102,7 @@ private fun BoxWithConstraintsScope.UI(
     accounts: List<Account> = emptyList(),
     selectedLoanAccount: Account? = null,
     createLoanTransaction: Boolean = false,
+    loanDocumentState: DocumentState = DocumentState.empty(),
 
     onCreateAccount: (CreateAccountData) -> Unit = {},
     onEditLoan: (Loan, Boolean) -> Unit = { _, _ -> },
@@ -213,6 +221,8 @@ private fun BoxWithConstraintsScope.UI(
         }
     }
 
+    val viewModel: LoanDetailsViewModel = viewModel()
+    val context = LocalContext.current.applicationContext
     LoanModal(
         modal = loanModalData,
         onCreateLoan = {
@@ -226,6 +236,27 @@ private fun BoxWithConstraintsScope.UI(
         accounts = accounts,
         onPerformCalculations = {
             waitModalVisible = true
+        },
+        documentState = loanDocumentState,
+        onDocumentAdd = { fileUri, fileName ->
+            viewModel.addDocument(fileName, fileUri, context)
+        },
+        onDocumentRename = { document, fileName ->
+            viewModel.renameDocument(context, document, fileName)
+        },
+        onDocumentDelete = {
+            viewModel.deleteDocument(it)
+        },
+        onDocumentClick = {
+            val viewFileUri = FileProvider.getUriForFile(
+                (context as RootActivity),
+                context.getApplicationContext().packageName + ".provider",
+                File(it.filePath)
+            )
+
+            context.shareDocument(
+                fileUri = viewFileUri
+            )
         }
     )
 
@@ -485,7 +516,11 @@ private fun LoanInfoCard(
             Text(
                 modifier = Modifier
                     .testTag("left_to_pay"),
-                text = stringResource(R.string.left_to_pay, leftToPay.format(baseCurrency), baseCurrency),
+                text = stringResource(
+                    R.string.left_to_pay,
+                    leftToPay.format(baseCurrency),
+                    baseCurrency
+                ),
                 style = UI.typo.nB2.style(
                     color = Gray,
                     fontWeight = FontWeight.ExtraBold

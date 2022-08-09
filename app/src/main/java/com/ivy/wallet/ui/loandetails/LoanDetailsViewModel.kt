@@ -111,7 +111,7 @@ class LoanDetailsViewModel @Inject constructor(
                     _baseCurrency.value = acc.currency ?: defaultCurrencyCode
                 }
 
-                val loanDocuments = documentsLogic.findByTransactionId(loan.id)
+                val loanDocuments = documentsLogic.findByAssociatedId(loan.id)
                 _loanDocumentState.value = DocumentState(documentList = loanDocuments)
             }
 
@@ -329,7 +329,7 @@ class LoanDetailsViewModel @Inject constructor(
             if (documentURI != null && loan.value?.id != null) {
                 val doc = documentsLogic.addDocument(
                     documentFileName = documentFileName,
-                    transactionId = loan.value?.id!!,
+                    associatedId = loan.value?.id!!,
                     documentURI = documentURI,
                     context = context,
                     onProgressStart = {
@@ -364,7 +364,7 @@ class LoanDetailsViewModel @Inject constructor(
     private suspend fun updateDocumentsList() {
         loan.value?.let { l ->
             _loanDocumentState.value = _loanDocumentState.value.copy(
-                documentList = documentsLogic.findByTransactionId(l.id)
+                documentList = documentsLogic.findByAssociatedId(l.id)
             )
         }
     }

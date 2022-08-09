@@ -43,7 +43,7 @@ fun BoxWithConstraintsScope.ShowDocumentModal(
                 onDismiss = {
                     fileModalData = null
                 },
-                onFileRenamed = { fName ->
+                onFileNameSet = { fName ->
                     onDocumentAdd(it, fName)
                 })
         },
@@ -56,7 +56,7 @@ fun BoxWithConstraintsScope.ShowDocumentModal(
                 onDismiss = {
                     fileModalData = null
                 },
-                onFileRenamed = { fName ->
+                onFileNameSet = { fName ->
                     onDocumentRename(it, fName)
                 })
         }
@@ -76,22 +76,23 @@ fun BoxWithConstraintsScope.ShowDocumentModal(
 fun BoxWithConstraintsScope.ShowFileNameModal(
     fileNameModalData: FileNameModalData?
 ) {
-    if (fileNameModalData != null) {
-        showKeyboard()
+    if (fileNameModalData == null)
+        return
 
-        FileNameModal(
-            initialFileName = fileNameModalData.initialFileName,
-            visible = fileNameModalData.visible,
-            onDismiss = fileNameModalData.onDismiss,
-            onFileRenamed = fileNameModalData.onFileRenamed
-        )
-    }
+    showKeyboard()
+
+    FileNameModal(
+        initialFileName = fileNameModalData.initialFileName,
+        visible = fileNameModalData.visible,
+        onDismiss = fileNameModalData.onDismiss,
+        onFileRenamed = fileNameModalData.onFileNameSet
+    )
 }
 
 data class FileNameModalData(
     val initialFileName: String,
     val visible: Boolean,
     val onDismiss: () -> Unit,
-    val onFileRenamed: (String) -> Unit
+    val onFileNameSet: (String) -> Unit
 )
 

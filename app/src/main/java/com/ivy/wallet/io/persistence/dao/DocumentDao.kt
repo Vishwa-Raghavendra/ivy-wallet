@@ -16,7 +16,7 @@ interface DocumentDao {
     suspend fun save(value: List<DocumentEntity>)
 
     @Query("SELECT * FROM documents where associatedId=:associatedId")
-    suspend fun findByTransactionId(associatedId: UUID): List<DocumentEntity>
+    suspend fun findByAssociatedId(associatedId: UUID): List<DocumentEntity>
 
     @Query("SELECT * FROM documents")
     suspend fun findAll(): List<DocumentEntity>

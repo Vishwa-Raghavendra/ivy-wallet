@@ -19,57 +19,9 @@ class DocumentsLogic @Inject constructor(
         private const val MODE_READ = "r"
     }
 
-    suspend fun findByTransactionId(transactionId: UUID): List<Document> {
-        return ioThread {
-            documentsDao.findByTransactionId(transactionId).map {
-                it.toDomain()
-            }
-        }
-    }
-
-    suspend fun findById(id: UUID): Document {
-        return ioThread {
-            documentsDao.findById(id).toDomain()
-        }
-    }
-
-    suspend fun deleteDocument(document: Document): Document {
-        return ioThread {
-            documentsDao.deleteById(document.id)
-            deleteDocumentFromStorage(document)
-            document
-        }
-    }
-
-    suspend fun renameDocument(context: Context, document: Document, newFileName: String) {
-        ioThread {
-            val originalFile = File(document.filePath)
-            val docFolderPath = File(context.filesDir, DOCUMENT_FOLDER_NAME)
-            val destinationFolder = File(docFolderPath, applyDuplicateFilenameFix(newFileName))
-            rename(originalFile, destinationFolder)
-
-            documentsDao.save(
-                document.copy(
-                    filePath = destinationFolder.absolutePath,
-                    fileName = newFileName
-                ).toEntity()
-            )
-        }
-    }
-
-    private fun rename(from: File, to: File): Boolean {
-        return from.exists() && from.renameTo(to)
-    }
-
-    private fun deleteDocumentFromStorage(document: Document) {
-        val file = File(document.filePath)
-        if (file.exists())
-            file.delete()
-    }
-
     suspend fun addDocument(
         documentFileName: String,
-        transactionId: UUID,
+        associatedId: UUID,
         documentURI: Uri,
         context: Context,
         onProgressStart: suspend () -> Unit,
@@ -88,14 +40,14 @@ class DocumentsLogic @Inject constructor(
                 documentDestinationFolder.mkdirs()
             }
 
-            copyFileToDestination(
+            copyDocumentToDestination(
                 context = context,
                 documentURI = documentURI,
                 documentDestinationFilePath = documentDestinationFilePath,
             )
 
             val document = addDocumentToDb(
-                transactionId = transactionId,
+                associatedId = associatedId,
                 documentFileName = documentFileName,
                 documentDestinationFilePath = documentDestinationFilePath
             )
@@ -106,27 +58,69 @@ class DocumentsLogic @Inject constructor(
         }
     }
 
+    suspend fun renameDocument(
+        context: Context,
+        document: Document,
+        newFileName: String
+    ) {
+        ioThread {
+            val documentsFolderPath = File(context.filesDir, DOCUMENT_FOLDER_NAME)
+
+            val originalFile = File(document.filePath)
+            val renamedFile = File(documentsFolderPath, applyDuplicateFilenameFix(newFileName))
+            renameFile(originalFile, renamedFile)
+
+            saveDocumentDetailsToDB(
+                document.copy(
+                    filePath = renamedFile.absolutePath,
+                    fileName = newFileName
+                )
+            )
+        }
+    }
+
+    suspend fun deleteDocument(document: Document): Document {
+        return ioThread {
+            deleteDocumentFromDB(document)
+            deleteDocumentFromStorage(document)
+            document
+        }
+    }
+
+
+    private fun renameFile(from: File, to: File): Boolean {
+        return from.exists() && from.renameTo(to)
+    }
+
+    private fun deleteDocumentFromStorage(document: Document) {
+        val file = File(document.filePath)
+        if (file.exists())
+            file.delete()
+    }
+
+
     private suspend fun addDocumentToDb(
-        transactionId: UUID,
+        associatedId: UUID,
         documentFileName: String,
         documentDestinationFilePath: String
     ): Document {
         return ioThread {
             val document =
                 Document(
-                    associatedId = transactionId,
+                    associatedId = associatedId,
                     filePath = documentDestinationFilePath,
                     fileName = documentFileName
                 )
 
-            documentsDao.save(document.toEntity())
+            saveDocumentDetailsToDB(document)
 
             return@ioThread document
         }
     }
 
+    //Nested withContext(Dispatchers.IO) is necessary to fix BlockingMethodInNonBlockingContext error
     @Suppress("BlockingMethodInNonBlockingContext")
-    private suspend fun copyFileToDestination(
+    private suspend fun copyDocumentToDestination(
         context: Context,
         documentURI: Uri,
         documentDestinationFilePath: String
@@ -170,5 +164,32 @@ class DocumentsLogic @Inject constructor(
             return documentFileName + suffix
         else
             documentFileName.substring(0, index) + suffix + documentFileName.substring(index)
+    }
+
+
+    //----------------------  DB Operations  ----------------------------
+
+    suspend fun findByAssociatedId(transactionId: UUID): List<Document> {
+        return ioThread {
+            documentsDao.findByAssociatedId(transactionId).map {
+                it.toDomain()
+            }
+        }
+    }
+
+    suspend fun findByDocumentId(documentId: UUID): Document {
+        return ioThread {
+            documentsDao.findById(documentId).toDomain()
+        }
+    }
+
+    private suspend fun saveDocumentDetailsToDB(document: Document) {
+        ioThread {
+            documentsDao.save(document.toEntity())
+        }
+    }
+
+    private suspend fun deleteDocumentFromDB(document: Document){
+        documentsDao.deleteById(document.id)
     }
 }

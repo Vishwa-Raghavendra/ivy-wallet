@@ -232,7 +232,7 @@ class LoanViewModel @Inject constructor(
 
         documentsLogic.addDocument(
             documentFileName = documentFileName,
-            transactionId = loanId,
+            associatedId = loanId,
             documentURI = documentURI,
             context = context,
             onProgressStart = {
@@ -306,7 +306,7 @@ class LoanViewModel @Inject constructor(
         //Update Document List
         _state.value = _state.value.copy(
             documentState = _state.value.documentState.copy(
-                documentList = documentsLogic.findByTransactionId(
+                documentList = documentsLogic.findByAssociatedId(
                     loanId
                 )
             )

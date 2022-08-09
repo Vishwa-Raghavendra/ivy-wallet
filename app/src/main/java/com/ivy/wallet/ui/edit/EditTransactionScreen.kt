@@ -177,6 +177,7 @@ private fun BoxWithConstraintsScope.UI(
     onCreateAccount: (CreateAccountData) -> Unit,
     onExchangeRateChanged: (Double?) -> Unit = { }
 ) {
+    val viewModel: EditTransactionViewModel = viewModel()
     var chooseCategoryModalVisible by remember { mutableStateOf(false) }
     var categoryModalData: CategoryModalData? by remember { mutableStateOf(null) }
     var accountModalData: AccountModalData? by remember { mutableStateOf(null) }
@@ -558,7 +559,6 @@ private fun BoxWithConstraintsScope.UI(
         }
     )
 
-    val viewModel: EditTransactionViewModel = viewModel()
     ShowDocumentModal(
         documentState = documentState,
         viewDocumentModalVisible = viewDocumentModalVisible,

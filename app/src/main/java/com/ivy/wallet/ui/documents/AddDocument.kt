@@ -25,13 +25,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.wallet.R
 import com.ivy.wallet.domain.data.core.Document
-import com.ivy.wallet.ui.IvyWalletPreview
 import com.ivy.wallet.ui.ivyWalletCtx
 import com.ivy.wallet.ui.theme.Gradient
 import com.ivy.wallet.ui.theme.Purple2Dark
@@ -54,7 +52,7 @@ fun AddDocument(
     onClick: () -> Unit
 ) {
     if (existingDocumentList.isNotEmpty()) {
-        ViewDocuments(onClick = onClick)
+        ViewDocumentsButton(onClick = onClick)
     } else {
         IvyBorderButton(
             modifier = Modifier.padding(start = 24.dp),
@@ -68,7 +66,7 @@ fun AddDocument(
 
 
 @Composable
-private fun ViewDocuments(
+private fun ViewDocumentsButton(
     onClick: () -> Unit,
 ) {
     val contrastColor = findContrastTextColor(Purple2Dark)
@@ -107,7 +105,7 @@ fun BoxWithConstraintsScope.ViewDocumentModal(
             onDismiss()
         },
         PrimaryAction = {
-
+            ModalSave(onClick = onDismiss)
         }
     ) {
         ViewDocumentContents(
@@ -368,15 +366,4 @@ fun BoxWithConstraintsScope.FileNameModal(
     }
 }
 
-
 private class AddNewDocument
-
-@Preview
-@Composable
-fun PreviewAddDocument() {
-    IvyWalletPreview {
-        AddDocument(emptyList()) {
-
-        }
-    }
-}

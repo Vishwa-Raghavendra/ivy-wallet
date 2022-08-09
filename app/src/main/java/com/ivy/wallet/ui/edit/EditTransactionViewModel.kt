@@ -247,7 +247,7 @@ class EditTransactionViewModel @Inject constructor(
 
         ioThread {
             _documentState.value =
-                DocumentState(documentList = documentsLogic.findByTransactionId(transaction.id))
+                DocumentState(documentList = documentsLogic.findByAssociatedId(transaction.id))
         }
 
         _customExchangeRateState.value = if (transaction.toAccountId == null)
@@ -678,39 +678,20 @@ class EditTransactionViewModel @Inject constructor(
 
     fun addDocument(documentFileName: String, documentURI: Uri?, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
-
             if (documentURI != null && loadedTransaction?.id != null) {
-                val doc = documentsLogic.addDocument(
+                documentsLogic.addDocument(
                     documentFileName = documentFileName,
-                    transactionId = loadedTransaction?.id!!,
+                    associatedId = loadedTransaction?.id!!,
                     documentURI = documentURI,
                     context = context,
                     onProgressStart = {
                         _documentState.value = documentState.value.copy(showProgress = true)
                     },
                     onProgressEnd = {
-                        //No - Op
+                        _documentState.value = documentState.value.copy(showProgress = false)
                     }
                 )
-
-                loadedTransaction?.let { trans ->
-                    _documentState.value = documentState.value.copy(
-                        showProgress = false,
-                        documentList = documentsLogic.findByTransactionId(trans.id)
-                    )
-                }
-            }
-        }
-    }
-
-    fun deleteDocument(document: Document) {
-        viewModelScope.launch(Dispatchers.IO) {
-            documentsLogic.deleteDocument(document)
-
-            loadedTransaction?.let { trans ->
-                _documentState.value = documentState.value.copy(
-                    documentList = documentsLogic.findByTransactionId(trans.id)
-                )
+                updateDocumentState()
             }
         }
     }
@@ -718,12 +699,22 @@ class EditTransactionViewModel @Inject constructor(
     fun renameDocument(context: Context, document: Document, newFileName: String) {
         viewModelScope.launch(Dispatchers.IO) {
             documentsLogic.renameDocument(context, document, newFileName)
+            updateDocumentState()
+        }
+    }
 
-            loadedTransaction?.let { trans ->
-                _documentState.value = documentState.value.copy(
-                    documentList = documentsLogic.findByTransactionId(trans.id)
-                )
-            }
+    fun deleteDocument(document: Document) {
+        viewModelScope.launch(Dispatchers.IO) {
+            documentsLogic.deleteDocument(document)
+            updateDocumentState()
+        }
+    }
+
+    private suspend fun updateDocumentState() {
+        loadedTransaction?.let { trans ->
+            _documentState.value = documentState.value.copy(
+                documentList = documentsLogic.findByAssociatedId(trans.id)
+            )
         }
     }
 }

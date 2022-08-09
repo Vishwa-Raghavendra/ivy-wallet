@@ -140,7 +140,7 @@ class EditTransactionViewModel @Inject constructor(
     private lateinit var baseUserCurrency: String
 
     fun start(screen: EditTransaction) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             TestIdlingResource.increment()
 
             editMode = screen.initialTransactionId != null
@@ -228,7 +228,7 @@ class EditTransactionViewModel @Inject constructor(
     private suspend fun display(transaction: Transaction) {
         this.title = transaction.title
 
-        _transactionType.value = transaction.type
+        _transactionType.postValue(transaction.type)
         _initialTitle.value = transaction.title
         _dateTime.value = transaction.dateTime
         _description.value = transaction.description
@@ -275,7 +275,7 @@ class EditTransactionViewModel @Inject constructor(
     private suspend fun baseCurrency(): String = ioThread { settingsDao.findFirst().currency }
 
     fun onAmountChanged(newAmount: Double) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             loadedTransaction = loadedTransaction().copy(
                 amount = newAmount.toBigDecimal()
             )
@@ -298,7 +298,7 @@ class EditTransactionViewModel @Inject constructor(
     }
 
     private fun updateTitleSuggestions(title: String? = loadedTransaction().title) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             TestIdlingResource.increment()
 
             _titleSuggestions.value = ioThread {
@@ -334,7 +334,7 @@ class EditTransactionViewModel @Inject constructor(
     }
 
     fun onAccountChanged(newAccount: Account) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             TestIdlingResource.increment()
 
             loadedTransaction = loadedTransaction().copy(
@@ -344,7 +344,7 @@ class EditTransactionViewModel @Inject constructor(
 
             updateCustomExchangeRateState(fromAccount = newAccount)
 
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.Default) {
                 updateCurrency(account = newAccount)
             }
 
@@ -362,7 +362,7 @@ class EditTransactionViewModel @Inject constructor(
     }
 
     fun onToAccountChanged(newAccount: Account) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             loadedTransaction = loadedTransaction().copy(
                 toAccountId = newAccount.id
             )
@@ -402,7 +402,7 @@ class EditTransactionViewModel @Inject constructor(
 
 
     fun onPayPlannedPayment() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             TestIdlingResource.increment()
 
             plannedPaymentsLogic.payOrGet(
@@ -424,7 +424,7 @@ class EditTransactionViewModel @Inject constructor(
 
 
     fun delete() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             TestIdlingResource.increment()
 
             ioThread {
@@ -443,7 +443,7 @@ class EditTransactionViewModel @Inject constructor(
     }
 
     fun createCategory(data: CreateCategoryData) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             TestIdlingResource.increment()
 
             categoryCreator.createCategory(data) {
@@ -458,7 +458,7 @@ class EditTransactionViewModel @Inject constructor(
     }
 
     fun editCategory(updatedCategory: Category) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             TestIdlingResource.increment()
 
             categoryCreator.editCategory(updatedCategory) {
@@ -470,7 +470,7 @@ class EditTransactionViewModel @Inject constructor(
     }
 
     fun createAccount(data: CreateAccountData) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             TestIdlingResource.increment()
 
             accountCreator.createAccount(data) {
@@ -495,7 +495,7 @@ class EditTransactionViewModel @Inject constructor(
             return
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             TestIdlingResource.increment()
 
             paywallLogic.protectQuotaExceededWithPaywall(
@@ -671,7 +671,7 @@ class EditTransactionViewModel @Inject constructor(
     }
 
     fun updateExchangeRate(exRate: Double?) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             updateCustomExchangeRateState(exchangeRate = exRate, resetRate = exRate == null)
         }
     }

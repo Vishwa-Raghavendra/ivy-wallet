@@ -114,7 +114,7 @@ class DocumentsLogic @Inject constructor(
         return ioThread {
             val document =
                 Document(
-                    transactionId = transactionId,
+                    associatedId = transactionId,
                     filePath = documentDestinationFilePath,
                     fileName = documentFileName
                 )

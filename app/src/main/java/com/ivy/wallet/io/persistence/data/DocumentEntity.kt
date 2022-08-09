@@ -7,7 +7,7 @@ import java.util.*
 
 @Entity(tableName = "documents")
 data class DocumentEntity(
-    val transactionId: UUID,
+    val associatedId: UUID,
     val filePath: String,
     val fileName: String,
 
@@ -16,5 +16,5 @@ data class DocumentEntity(
     val id: UUID = UUID.randomUUID(),
 ) {
     fun toDomain(): Document =
-        Document(transactionId = transactionId, filePath = filePath, id = id, fileName = fileName)
+        Document(associatedId = associatedId, filePath = filePath, id = id, fileName = fileName)
 }

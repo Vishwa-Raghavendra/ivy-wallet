@@ -15,8 +15,8 @@ interface DocumentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun save(value: List<DocumentEntity>)
 
-    @Query("SELECT * FROM documents where transactionId=:transactionId")
-    suspend fun findByTransactionId(transactionId: UUID): List<DocumentEntity>
+    @Query("SELECT * FROM documents where associatedId=:associatedId")
+    suspend fun findByTransactionId(associatedId: UUID): List<DocumentEntity>
 
     @Query("SELECT * FROM documents")
     suspend fun findAll(): List<DocumentEntity>

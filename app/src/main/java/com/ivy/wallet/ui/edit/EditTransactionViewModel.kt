@@ -247,7 +247,9 @@ class EditTransactionViewModel @Inject constructor(
 
         ioThread {
             _documentState.value =
-                DocumentState(documentList = documentsLogic.findByAssociatedId(transaction.id))
+                DocumentState(
+                    documentList = documentsLogic.findByAssociatedId(findAppropriateId(transaction))
+                )
         }
 
         _customExchangeRateState.value = if (transaction.toAccountId == null)
@@ -266,6 +268,11 @@ class EditTransactionViewModel @Inject constructor(
         }
 
         _displayLoanHelper.value = getDisplayLoanHelper(trans = transaction)
+    }
+
+    private fun findAppropriateId(transaction: Transaction): UUID {
+        return transaction.loanRecordId
+            ?: (transaction.loanId ?: transaction.id)
     }
 
     private suspend fun updateCurrency(account: Account) {
@@ -678,10 +685,10 @@ class EditTransactionViewModel @Inject constructor(
 
     fun addDocument(documentFileName: String, documentURI: Uri?, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (documentURI != null && loadedTransaction?.id != null) {
+            if (documentURI != null &&  loadedTransaction?.id != null) {
                 documentsLogic.addDocument(
                     documentFileName = documentFileName,
-                    associatedId = loadedTransaction?.id!!,
+                    associatedId = findAppropriateId(loadedTransaction!!),
                     documentURI = documentURI,
                     context = context,
                     onProgressStart = {
@@ -713,7 +720,7 @@ class EditTransactionViewModel @Inject constructor(
     private suspend fun updateDocumentState() {
         loadedTransaction?.let { trans ->
             _documentState.value = documentState.value.copy(
-                documentList = documentsLogic.findByAssociatedId(trans.id)
+                documentList = documentsLogic.findByAssociatedId(findAppropriateId(trans))
             )
         }
     }

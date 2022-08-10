@@ -33,9 +33,7 @@ import com.ivy.wallet.domain.data.core.Category
 import com.ivy.wallet.domain.deprecated.logic.model.CreateAccountData
 import com.ivy.wallet.domain.deprecated.logic.model.CreateCategoryData
 import com.ivy.wallet.ui.*
-import com.ivy.wallet.ui.documents.AddDocument
-import com.ivy.wallet.ui.documents.DocumentState
-import com.ivy.wallet.ui.documents.ShowDocumentModal
+import com.ivy.wallet.ui.documents.*
 import com.ivy.wallet.ui.edit.core.*
 import com.ivy.wallet.ui.loan.data.EditTransactionDisplayLoan
 import com.ivy.wallet.ui.theme.components.AddPrimaryAttributeButton
@@ -43,10 +41,7 @@ import com.ivy.wallet.ui.theme.components.ChangeTransactionTypeModal
 import com.ivy.wallet.ui.theme.components.CustomExchangeRateCard
 import com.ivy.wallet.ui.theme.modal.*
 import com.ivy.wallet.ui.theme.modal.edit.*
-import com.ivy.wallet.utils.convertUTCtoLocal
-import com.ivy.wallet.utils.getTrueDate
-import com.ivy.wallet.utils.onScreenStart
-import com.ivy.wallet.utils.timeNowLocal
+import com.ivy.wallet.utils.*
 import java.io.File
 import java.time.LocalDateTime
 import java.util.*
@@ -207,6 +202,11 @@ private fun BoxWithConstraintsScope.UI(
             )
         )
     }
+
+    var fileModalData: FileNameModalData? by remember {
+        mutableStateOf(null)
+    }
+
     val titleFocus = FocusRequester()
     val scrollState = rememberScrollState()
 
@@ -218,6 +218,8 @@ private fun BoxWithConstraintsScope.UI(
         scrollState.animateScrollTo(scrollInt)
     }
     val context = LocalContext.current
+
+
 
     Column(
         modifier = Modifier
@@ -292,7 +294,24 @@ private fun BoxWithConstraintsScope.UI(
         }
         Spacer(Modifier.height(16.dp))
 
-        AddDocument(existingDocumentList = documentState.documentList) {
+        AddDocument(
+            existingDocumentList = documentState.documentList,
+            onDocumentAdd = {
+                fileModalData = FileNameModalData(
+                    initialFileName = context.getFileName(it, defaultFileName = ""),
+                    visible = true,
+                    onDismiss = {
+                        fileModalData = null
+                    },
+                    onFileNameSet = { fName ->
+                        viewModel.addDocument(
+                            documentFileName = fName,
+                            documentURI = it,
+                            context = context
+                        )
+                    })
+                viewDocumentModalVisible = true
+            }) {
             viewDocumentModalVisible = true
         }
 
@@ -586,6 +605,8 @@ private fun BoxWithConstraintsScope.UI(
             viewDocumentModalVisible = false
         }
     )
+
+    ShowFileNameModal(fileNameModalData = fileModalData)
 }
 
 private fun shouldFocusCategory(

@@ -49,8 +49,10 @@ import java.util.*
 @Composable
 fun AddDocument(
     existingDocumentList: List<Document>,
+    onDocumentAdd: (uri: Uri?) -> Unit = {},
     onClick: () -> Unit
 ) {
+    val ivyContext = ivyWalletCtx()
     if (existingDocumentList.isNotEmpty()) {
         ViewDocumentsButton(onClick = onClick)
     } else {
@@ -59,7 +61,11 @@ fun AddDocument(
             iconStart = R.drawable.ic_plus,
             iconTint = UI.colors.pureInverse,
             text = "Add Document",
-            onClick = onClick
+            onClick = {
+                ivyContext.openFile {
+                    onDocumentAdd(it)
+                }
+            }
         )
     }
 }

@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -35,9 +36,7 @@ import com.ivy.wallet.domain.data.core.Loan
 import com.ivy.wallet.domain.deprecated.logic.model.CreateAccountData
 import com.ivy.wallet.domain.deprecated.logic.model.CreateLoanData
 import com.ivy.wallet.ui.IvyWalletPreview
-import com.ivy.wallet.ui.documents.AddDocument
-import com.ivy.wallet.ui.documents.DocumentState
-import com.ivy.wallet.ui.documents.ShowDocumentModal
+import com.ivy.wallet.ui.documents.*
 import com.ivy.wallet.ui.theme.*
 import com.ivy.wallet.ui.theme.components.ItemIconSDefaultIcon
 import com.ivy.wallet.ui.theme.components.IvyCheckboxWithText
@@ -77,6 +76,7 @@ fun BoxWithConstraintsScope.LoanModal(
     onDocumentClick: (Document) -> Unit = {},
     dismiss: () -> Unit,
 ) {
+    val context = LocalContext.current
     val loan = modal?.loan
     var nameTextFieldValue by remember(modal) {
         mutableStateOf(selectEndTextFieldValue(loan?.name))
@@ -114,6 +114,9 @@ fun BoxWithConstraintsScope.LoanModal(
 
     var accountModalData: AccountModalData? by remember { mutableStateOf(null) }
     var viewDocumentModalVisible by remember { mutableStateOf(false) }
+    var fileModalData: FileNameModalData? by remember {
+        mutableStateOf(null)
+    }
 
 
     IvyModal(
@@ -236,9 +239,24 @@ fun BoxWithConstraintsScope.LoanModal(
 
         Spacer(Modifier.height(16.dp))
 
-        AddDocument(existingDocumentList = documentState.documentList) {
-            viewDocumentModalVisible = true
-        }
+        AddDocument(
+            existingDocumentList = documentState.documentList,
+            onDocumentAdd = {
+                fileModalData = FileNameModalData(
+                    initialFileName = context.getFileName(it, defaultFileName = ""),
+                    visible = true,
+                    onDismiss = {
+                        fileModalData = null
+                    },
+                    onFileNameSet = { fName ->
+                        onDocumentAdd(it,fName)
+                    })
+                viewDocumentModalVisible = true
+            },
+            onClick = {
+                viewDocumentModalVisible = true
+            }
+        )
 
         Spacer(Modifier.height(24.dp))
 
@@ -345,6 +363,8 @@ fun BoxWithConstraintsScope.LoanModal(
             viewDocumentModalVisible = false
         }
     )
+
+    ShowFileNameModal(fileNameModalData = fileModalData)
 }
 
 @Composable

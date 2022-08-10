@@ -37,6 +37,7 @@ import com.ivy.wallet.ui.theme.Red
 import com.ivy.wallet.ui.theme.components.*
 import com.ivy.wallet.ui.theme.findContrastTextColor
 import com.ivy.wallet.ui.theme.modal.IvyModal
+import com.ivy.wallet.ui.theme.modal.ModalPositiveButton
 import com.ivy.wallet.ui.theme.modal.ModalSave
 import com.ivy.wallet.ui.theme.modal.ModalTitle
 import com.ivy.wallet.utils.drawColoredShadow
@@ -111,7 +112,11 @@ fun BoxWithConstraintsScope.ViewDocumentModal(
             onDismiss()
         },
         PrimaryAction = {
-            ModalSave(onClick = onDismiss)
+            ModalPositiveButton(
+                onClick = onDismiss,
+                text = "Done",
+                iconStart = R.drawable.ic_custom_document_s
+            )
         }
     ) {
         ViewDocumentContents(
@@ -142,6 +147,15 @@ private fun ColumnScope.ViewDocumentContents(
 
     ModalTitle(
         text = "Documents"
+    )
+
+    Text(
+        modifier = Modifier.padding(horizontal = 32.dp),
+        text = "* Documents once removed, are removed permanently",
+        style = UI.typo.nC.style(
+            color = UI.colors.mediumInverse,
+            fontWeight = FontWeight.Light,
+        )
     )
 
     Spacer(Modifier.height(24.dp))
@@ -278,7 +292,8 @@ private fun DocumentDisplayItem(
                 .size(32.dp),
             icon = R.drawable.ic_remove,
             backgroundGradient = Gradient.solid(deselectBtnBackground),
-            tint = findContrastTextColor(deselectBtnBackground)
+            tint = findContrastTextColor(deselectBtnBackground),
+            hasShadow = false
         ) {
             onDeselect()
         }

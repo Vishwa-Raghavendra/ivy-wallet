@@ -23,10 +23,6 @@ fun BoxWithConstraintsScope.ShowDocumentModal(
 ) {
     val context = LocalContext.current
 
-    var fileUri: Uri? by remember {
-        mutableStateOf(null)
-    }
-
     var fileModalData: FileNameModalData? by remember {
         mutableStateOf(null)
     }
@@ -36,7 +32,6 @@ fun BoxWithConstraintsScope.ShowDocumentModal(
         visible = viewDocumentModalVisible,
         onDismiss = onModalDismiss,
         onDocumentAdd = {
-            fileUri = it
             fileModalData = FileNameModalData(
                 initialFileName = context.getFileName(it, defaultFileName = ""),
                 visible = true,

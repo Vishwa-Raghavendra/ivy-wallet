@@ -16,6 +16,7 @@ class LoanRecordCreator(
     suspend fun create(
         loanId: UUID,
         data: CreateLoanRecordData,
+        loanRecordId : UUID = UUID.randomUUID(),
         onRefreshUI: suspend (LoanRecord) -> Unit
     ): UUID? {
         val note = data.note
@@ -26,6 +27,7 @@ class LoanRecordCreator(
             paywallLogic.protectQuotaExceededWithPaywall {
                 newItem = ioThread {
                     val item = LoanRecord(
+                        id = loanRecordId,
                         loanId = loanId,
                         note = note?.trim(),
                         amount = data.amount,
@@ -46,11 +48,11 @@ class LoanRecordCreator(
                     uploader.sync(newItem!!)
                 }
             }
-            return newItem?.id
+            return loanRecordId
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        return null
+        return loanRecordId
     }
 
 

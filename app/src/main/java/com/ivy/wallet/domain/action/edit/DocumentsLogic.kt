@@ -169,9 +169,9 @@ class DocumentsLogic @Inject constructor(
 
     //----------------------  DB Operations  ----------------------------
 
-    suspend fun findByAssociatedId(transactionId: UUID): List<Document> {
+    suspend fun findByAssociatedId(associatedId: UUID): List<Document> {
         return ioThread {
-            documentsDao.findByAssociatedId(transactionId).map {
+            documentsDao.findByAssociatedId(associatedId).map {
                 it.toDomain()
             }
         }

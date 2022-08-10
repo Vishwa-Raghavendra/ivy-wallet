@@ -3,10 +3,7 @@ package com.ivy.wallet.ui.loandetails
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.*
 import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -66,6 +63,7 @@ fun BoxWithConstraintsScope.LoanDetailsScreen(screen: LoanDetails) {
     val selectedLoanAccount by viewModel.selectedLoanAccount.collectAsState()
     val createLoanTransaction by viewModel.createLoanTransaction.collectAsState()
     val loanDocumentState by viewModel.loanDocumentState.collectAsState()
+    val loanRecordDocumentState by viewModel.loanRecordDocumentState.collectAsState()
 
     onScreenStart {
         viewModel.start(screen = screen)
@@ -81,6 +79,7 @@ fun BoxWithConstraintsScope.LoanDetailsScreen(screen: LoanDetails) {
         selectedLoanAccount = selectedLoanAccount,
         createLoanTransaction = createLoanTransaction,
         loanDocumentState = loanDocumentState,
+        loanRecordDocumentState = loanRecordDocumentState,
 
         onEditLoan = viewModel::editLoan,
         onCreateLoanRecord = viewModel::createLoanRecord,
@@ -103,6 +102,7 @@ private fun BoxWithConstraintsScope.UI(
     selectedLoanAccount: Account? = null,
     createLoanTransaction: Boolean = false,
     loanDocumentState: DocumentState = DocumentState.empty(),
+    loanRecordDocumentState: DocumentState = DocumentState.empty(),
 
     onCreateAccount: (CreateAccountData) -> Unit = {},
     onEditLoan: (Loan, Boolean) -> Unit = { _, _ -> },
@@ -111,6 +111,7 @@ private fun BoxWithConstraintsScope.UI(
     onDeleteLoanRecord: (LoanRecord) -> Unit = {},
     onDeleteLoan: () -> Unit = {},
 ) {
+    val viewModel: LoanDetailsViewModel = viewModel()
     val itemColor = loan?.color?.toComposeColor() ?: Gray
 
     var deleteModalVisible by remember { mutableStateOf(false) }
@@ -120,6 +121,9 @@ private fun BoxWithConstraintsScope.UI(
     }
     var waitModalVisible by remember(loan) { mutableStateOf(false) }
 
+    var openDocumentModal by remember {
+        mutableStateOf(false)
+    }
 
     Column(
         modifier = Modifier
@@ -204,6 +208,10 @@ private fun BoxWithConstraintsScope.UI(
                             isLoanInterest = displayLoanRecord.loanRecord.interest,
                             loanAccountCurrencyCode = displayLoanRecord.loanCurrencyCode
                         )
+                        viewModel.updateLoanRecordDocumentState(displayLoanRecord)
+                    },
+                    openDocumentModal = {
+                        openDocumentModal = true
                     }
                 )
             }
@@ -221,8 +229,8 @@ private fun BoxWithConstraintsScope.UI(
         }
     }
 
-    val viewModel: LoanDetailsViewModel = viewModel()
-    val context = LocalContext.current.applicationContext
+
+    val context = LocalContext.current
     LoanModal(
         modal = loanModalData,
         onCreateLoan = {
@@ -239,13 +247,13 @@ private fun BoxWithConstraintsScope.UI(
         },
         documentState = loanDocumentState,
         onDocumentAdd = { fileUri, fileName ->
-            viewModel.addDocument(fileName, fileUri, context)
+            viewModel.addDocumentLoan(fileName, fileUri, context)
         },
         onDocumentRename = { document, fileName ->
-            viewModel.renameDocument(context, document, fileName)
+            viewModel.renameDocumentLoan(context, document, fileName)
         },
         onDocumentDelete = {
-            viewModel.deleteDocument(it)
+            viewModel.deleteDocumentLoan(it)
         },
         onDocumentClick = {
             val viewFileUri = FileProvider.getUriForFile(
@@ -268,8 +276,32 @@ private fun BoxWithConstraintsScope.UI(
         accounts = accounts,
         dismiss = {
             loanRecordModalData = null
+            openDocumentModal = false
+            viewModel.updateLoanRecordDefaultId()
         },
-        onCreateAccount = onCreateAccount
+        onCreateAccount = onCreateAccount,
+        documentState = loanRecordDocumentState,
+        viewDocModalVisible = openDocumentModal,
+        onDocumentAdd = { fileUri, fileName, loanRecord ->
+            viewModel.addDocumentLoanRecord(fileName, fileUri, context, loanRecord)
+        },
+        onDocumentRename = { document, fileName, loanRecord ->
+            viewModel.renameDocumentLoanRecord(context, document, fileName, loanRecord)
+        },
+        onDocumentDelete = { document, loanRecord ->
+            viewModel.deleteDocumentLoanRecord(document, loanRecord)
+        },
+        onDocumentClick = { document, loanRecord ->
+            val viewFileUri = FileProvider.getUriForFile(
+                (context as RootActivity),
+                context.getApplicationContext().packageName + ".provider",
+                File(document.filePath)
+            )
+
+            context.shareDocument(
+                fileUri = viewFileUri
+            )
+        }
     )
 
     DeleteModal(
@@ -581,7 +613,11 @@ private fun LoanInfoCard(
                 Text(
                     modifier = Modifier
                         .testTag("interest_paid"),
-                    text = stringResource(R.string.interest_paid, loanAmountPaid.format(baseCurrency), baseCurrency),
+                    text = stringResource(
+                        R.string.interest_paid,
+                        loanAmountPaid.format(baseCurrency),
+                        baseCurrency
+                    ),
                     style = UI.typo.nB2.style(
                         color = Gray,
                         fontWeight = FontWeight.ExtraBold
@@ -629,16 +665,22 @@ fun LazyListScope.loanRecords(
     baseCurrency: String = "",
     loan: Loan,
     displayLoanRecords: List<DisplayLoanRecord> = emptyList(),
+    openDocumentModal: (DisplayLoanRecord) -> Unit = {},
 
     onClick: (DisplayLoanRecord) -> Unit
 ) {
-    items(items = displayLoanRecords) { displayLoanRecord ->
+    items(items = displayLoanRecords, key = { it.loanRecord.id }) { displayLoanRecord ->
         LoanRecordItem(
             loan = loan,
             loanRecord = displayLoanRecord.loanRecord,
             baseCurrency = displayLoanRecord.loanRecordCurrencyCode,
             account = displayLoanRecord.account,
-            loanBaseCurrency = displayLoanRecord.loanCurrencyCode
+            loanBaseCurrency = displayLoanRecord.loanCurrencyCode,
+            loanRecordDocumentState = displayLoanRecord.loanRecordDocumentState,
+            openDocumentModal = {
+                onClick(displayLoanRecord)
+                openDocumentModal(displayLoanRecord)
+            }
         ) {
             onClick(displayLoanRecord)
         }
@@ -654,6 +696,8 @@ private fun LoanRecordItem(
     baseCurrency: String,
     loanBaseCurrency: String = "",
     account: Account? = null,
+    loanRecordDocumentState: DocumentState = DocumentState.empty(),
+    openDocumentModal: () -> Unit = {},
     onClick: () -> Unit
 ) {
     val nav = navigation()
@@ -670,56 +714,85 @@ private fun LoanRecordItem(
     ) {
 
         if (account != null || loanRecord.interest) {
-            Row(Modifier.padding(16.dp)) {
-                if (account != null) {
-                    IvyButton(
-                        backgroundGradient = Gradient.solid(UI.colors.pure),
-                        hasGlow = false,
-                        iconTint = UI.colors.pureInverse,
-                        text = account.name,
-                        iconStart = getCustomIconIdS(
-                            iconName = account.icon,
-                            defaultIcon = R.drawable.ic_custom_account_s
-                        ),
-                        textStyle = UI.typo.c.style(
-                            color = UI.colors.pureInverse,
-                            fontWeight = FontWeight.ExtraBold
-                        ),
-                        padding = 8.dp,
-                        iconEdgePadding = 10.dp
-                    ) {
-                        nav.navigateTo(
-                            ItemStatistic(
-                                accountId = account.id,
-                                categoryId = null
+            LazyRow(Modifier.padding(16.dp)) {
+                item {
+                    if (account != null) {
+                        IvyButton(
+                            backgroundGradient = Gradient.solid(UI.colors.pure),
+                            hasGlow = false,
+                            iconTint = UI.colors.pureInverse,
+                            text = account.name,
+                            iconStart = getCustomIconIdS(
+                                iconName = account.icon,
+                                defaultIcon = R.drawable.ic_custom_account_s
+                            ),
+                            textStyle = UI.typo.c.style(
+                                color = UI.colors.pureInverse,
+                                fontWeight = FontWeight.ExtraBold
+                            ),
+                            padding = 8.dp,
+                            iconEdgePadding = 10.dp
+                        ) {
+                            nav.navigateTo(
+                                ItemStatistic(
+                                    accountId = account.id,
+                                    categoryId = null
+                                )
                             )
-                        )
+                        }
                     }
                 }
 
-                if (loanRecord.interest) {
-                    //Spacer(modifier = Modifier.width(8.dp))
+                item {
+                    if (loanRecord.interest) {
+                        //Spacer(modifier = Modifier.width(8.dp))
 
-                    val textIconColor = if (isDarkColor(loan.color)) MediumWhite else MediumBlack
+                        val textIconColor =
+                            if (isDarkColor(loan.color)) MediumWhite else MediumBlack
 
-                    IvyButton(
-                        modifier = Modifier.padding(start = 8.dp),
-                        backgroundGradient = Gradient.solid(loan.color.toComposeColor()),
-                        hasGlow = false,
-                        iconTint = textIconColor,
-                        text = stringResource(R.string.interest),
-                        iconStart = getCustomIconIdS(
-                            iconName = "currency",
-                            defaultIcon = R.drawable.ic_currency
-                        ),
-                        textStyle = UI.typo.c.style(
-                            color = textIconColor,
-                            fontWeight = FontWeight.ExtraBold
-                        ),
-                        padding = 8.dp,
-                        iconEdgePadding = 10.dp
-                    ) {
-                        //do Nothing
+                        IvyButton(
+                            modifier = Modifier.padding(start = 8.dp),
+                            backgroundGradient = Gradient.solid(loan.color.toComposeColor()),
+                            hasGlow = false,
+                            iconTint = textIconColor,
+                            text = stringResource(R.string.interest),
+                            iconStart = getCustomIconIdS(
+                                iconName = "currency",
+                                defaultIcon = R.drawable.ic_currency
+                            ),
+                            textStyle = UI.typo.c.style(
+                                color = textIconColor,
+                                fontWeight = FontWeight.ExtraBold
+                            ),
+                            padding = 8.dp,
+                            iconEdgePadding = 10.dp
+                        ) {
+                            //do Nothing
+                        }
+                    }
+                }
+
+                item {
+                    if (loanRecordDocumentState.documentList.isNotEmpty()) {
+                        IvyButton(
+                            modifier = Modifier.padding(start = 8.dp),
+                            backgroundGradient = Gradient.solid(UI.colors.pure),
+                            hasGlow = false,
+                            iconTint = Red,
+                            text = "Documents",
+                            iconStart = getCustomIconIdS(
+                                iconName = null,
+                                defaultIcon = R.drawable.ic_custom_document_s
+                            ),
+                            textStyle = UI.typo.c.style(
+                                color = UI.colors.pureInverse,
+                                fontWeight = FontWeight.ExtraBold
+                            ),
+                            padding = 8.dp,
+                            iconEdgePadding = 10.dp
+                        ) {
+                            openDocumentModal()
+                        }
                     }
                 }
             }

@@ -1,5 +1,7 @@
 package com.ivy.wallet.ui.theme.modal
 
+import android.net.Uri
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,11 +25,15 @@ import com.ivy.design.l0_system.style
 import com.ivy.frp.test.TestingContext
 import com.ivy.wallet.R
 import com.ivy.wallet.domain.data.core.Account
+import com.ivy.wallet.domain.data.core.Document
 import com.ivy.wallet.domain.data.core.LoanRecord
 import com.ivy.wallet.domain.deprecated.logic.model.CreateAccountData
 import com.ivy.wallet.domain.deprecated.logic.model.CreateLoanRecordData
 import com.ivy.wallet.domain.deprecated.logic.model.EditLoanRecordData
 import com.ivy.wallet.ui.IvyWalletPreview
+import com.ivy.wallet.ui.documents.AddDocument
+import com.ivy.wallet.ui.documents.DocumentState
+import com.ivy.wallet.ui.documents.ShowDocumentModal
 import com.ivy.wallet.ui.ivyWalletCtx
 import com.ivy.wallet.ui.theme.components.ItemIconSDefaultIcon
 import com.ivy.wallet.ui.theme.components.IvyCheckboxWithText
@@ -53,15 +59,21 @@ data class LoanRecordModalData(
     val id: UUID = UUID.randomUUID()
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BoxWithConstraintsScope.LoanRecordModal(
     modal: LoanRecordModalData?,
+    viewDocModalVisible: Boolean = false,
     accounts: List<Account> = emptyList(),
     onCreateAccount: (CreateAccountData) -> Unit = {},
-
     onCreate: (CreateLoanRecordData) -> Unit,
     onEdit: (EditLoanRecordData) -> Unit,
     onDelete: (LoanRecord) -> Unit,
+    documentState: DocumentState = DocumentState.empty(),
+    onDocumentAdd: (Uri?, String, LoanRecord?) -> Unit = { _, _, _ -> },
+    onDocumentRename: (Document, String, LoanRecord?) -> Unit = { _, _, _ -> },
+    onDocumentDelete: (Document, LoanRecord?) -> Unit = { _, _ -> },
+    onDocumentClick: (Document, LoanRecord?) -> Unit = { _, _ -> },
     dismiss: () -> Unit
 ) {
     val initialRecord = modal?.loanRecord
@@ -92,6 +104,8 @@ fun BoxWithConstraintsScope.LoanRecordModal(
     var reCalculateVisible by remember(modal) {
         mutableStateOf(modal?.loanAccountCurrencyCode != null && modal.loanAccountCurrencyCode != modal.baseCurrency)
     }
+
+    var viewDocumentModalVisible by remember(viewDocModalVisible) { mutableStateOf(viewDocModalVisible) }
 
     var amountModalVisible by remember { mutableStateOf(false) }
     var deleteModalVisible by remember(modal) { mutableStateOf(false) }
@@ -144,7 +158,8 @@ fun BoxWithConstraintsScope.LoanRecordModal(
         ) {
             ModalTitle(
                 text = if (initialRecord != null) stringResource(R.string.edit_record) else stringResource(
-                                    R.string.new_record)
+                    R.string.new_record
+                )
             )
 
             if (initialRecord != null) {
@@ -214,7 +229,24 @@ fun BoxWithConstraintsScope.LoanRecordModal(
             },
             childrenTestTag = "amount_modal_account"
         )
+        Spacer(Modifier.height(24.dp))
+
+        Text(
+            modifier = Modifier.padding(horizontal = 32.dp),
+            text = "Documents",
+            style = UI.typo.b2.style(
+                color = UI.colors.pureInverse,
+                fontWeight = FontWeight.ExtraBold
+            )
+        )
+
         Spacer(Modifier.height(16.dp))
+
+        AddDocument(existingDocumentList = documentState.documentList) {
+            viewDocumentModalVisible = true
+        }
+
+        Spacer(Modifier.height(24.dp))
 
         IvyCheckboxWithText(
             modifier = Modifier
@@ -325,6 +357,26 @@ fun BoxWithConstraintsScope.LoanRecordModal(
 
         accountChangeConformationModal = false
     }
+
+    ShowDocumentModal(
+        documentState = documentState,
+        viewDocumentModalVisible = viewDocumentModalVisible,
+        onDocumentAdd = { fileUri, fName ->
+            onDocumentAdd(fileUri, fName, initialRecord)
+        },
+        onDocumentRename = { doc, newFileName ->
+            onDocumentRename(doc, newFileName, initialRecord)
+        },
+        onDocumentDelete = { doc ->
+            onDocumentDelete(doc, initialRecord)
+        },
+        onDocumentClick = { doc ->
+            onDocumentClick(doc, initialRecord)
+        },
+        onModalDismiss = {
+            viewDocumentModalVisible = false
+        }
+    )
 }
 
 @Composable

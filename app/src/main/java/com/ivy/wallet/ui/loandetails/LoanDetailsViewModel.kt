@@ -26,6 +26,7 @@ import com.ivy.wallet.ui.loan.data.DisplayLoanRecord
 import com.ivy.wallet.utils.computationThread
 import com.ivy.wallet.utils.ioThread
 import com.ivy.wallet.utils.readOnly
+import com.ivy.wallet.utils.replace
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,10 +80,14 @@ class LoanDetailsViewModel @Inject constructor(
     private val _createLoanTransaction = MutableStateFlow(false)
     val createLoanTransaction = _createLoanTransaction.asStateFlow()
 
-    private val _loanDocumentState = MutableStateFlow<DocumentState>(DocumentState.empty())
+    private val _loanDocumentState = MutableStateFlow(DocumentState.empty())
     val loanDocumentState = _loanDocumentState.readOnly()
 
+    private val _loanRecordDocumentState = MutableStateFlow(DocumentState.empty())
+    val loanRecordDocumentState = _loanRecordDocumentState.readOnly()
+
     private var defaultCurrencyCode = ""
+    private var loanRecordId: UUID = UUID.randomUUID()
 
     fun start(screen: LoanDetails) {
         load(loanId = screen.loanId)
@@ -124,6 +129,8 @@ class LoanDetailsViewModel @Inject constructor(
                             )
                         }
 
+                        val documentList = documentsLogic.findByAssociatedId(it.id)
+
                         val account = findAccount(
                             accounts = accounts.value,
                             accountId = it.accountId,
@@ -135,7 +142,8 @@ class LoanDetailsViewModel @Inject constructor(
                             loanRecordTransaction = trans != null,
                             loanRecordCurrencyCode = account?.currency ?: defaultCurrencyCode,
                             loanCurrencyCode = selectedLoanAccount.value?.currency
-                                ?: defaultCurrencyCode
+                                ?: defaultCurrencyCode,
+                            loanRecordDocumentState = DocumentState(documentList = documentList)
                         )
                     }
             }
@@ -230,6 +238,7 @@ class LoanDetailsViewModel @Inject constructor(
             )
 
             val loanRecordUUID = loanRecordCreator.create(
+                loanRecordId = loanRecordId,
                 loanId = loanId,
                 data = modifiedData
             ) {
@@ -324,48 +333,199 @@ class LoanDetailsViewModel @Inject constructor(
         }
     }
 
-    fun addDocument(documentFileName: String, documentURI: Uri?, context: Context) {
+    //----------------------  Loan Document Operations  ----------------------------
+
+    fun addDocumentLoan(documentFileName: String, documentURI: Uri?, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (documentURI != null && loan.value?.id != null) {
-                val doc = documentsLogic.addDocument(
-                    documentFileName = documentFileName,
-                    associatedId = loan.value?.id!!,
-                    documentURI = documentURI,
-                    context = context,
-                    onProgressStart = {
-                        _loanDocumentState.value =
-                            _loanDocumentState.value.copy(showProgress = true)
-                    },
-                    onProgressEnd = {
-                        _loanDocumentState.value =
-                            _loanDocumentState.value.copy(showProgress = false)
-                    }
-                )
-                updateDocumentsList()
-            }
+            addDocumentInternal(
+                documentFileName = documentFileName,
+                documentURI = documentURI,
+                context = context,
+                id = loan.value?.id,
+                onProgressStart = {
+                    _loanDocumentState.value =
+                        _loanDocumentState.value.copy(showProgress = true)
+                },
+                onProgressEnd = {
+                    _loanDocumentState.value =
+                        _loanDocumentState.value.copy(showProgress = false)
+                },
+                onUpdateAction = this@LoanDetailsViewModel::updateLoanDocumentsList
+            )
         }
     }
 
-    fun deleteDocument(document: Document) {
+    fun renameDocumentLoan(context: Context, document: Document, newFileName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            renameDocumentInternal(
+                context = context,
+                document = document,
+                newFileName = newFileName,
+                onUpdateAction = this@LoanDetailsViewModel::updateLoanDocumentsList
+            )
+        }
+    }
+
+    fun deleteDocumentLoan(document: Document) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteDocumentInternal(
+                document = document,
+                onUpdateAction = this@LoanDetailsViewModel::updateLoanDocumentsList
+            )
+        }
+    }
+
+    //----------------------  LoanRecord Document Operations  ----------------------------
+
+    fun addDocumentLoanRecord(
+        documentFileName: String,
+        documentURI: Uri?,
+        context: Context,
+        loanRecord: LoanRecord?
+    ) {
+        val id = loanRecord?.id ?: loanRecordId
+        viewModelScope.launch(Dispatchers.IO) {
+
+            var showProgress = false
+
+            addDocumentInternal(
+                documentFileName = documentFileName,
+                documentURI = documentURI,
+                context = context,
+                id = id,
+                onProgressStart = {
+                    showProgress = true
+                },
+                onProgressEnd = {
+                    showProgress = false
+                },
+                onUpdateAction = {
+                    updateLoanRecordState(loanRecord, showProgress, loanRecordId)
+                }
+            )
+        }
+    }
+
+    fun renameDocumentLoanRecord(
+        context: Context,
+        document: Document,
+        newFileName: String,
+        loanRecord: LoanRecord?
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            renameDocumentInternal(
+                context = context,
+                document = document,
+                newFileName = newFileName,
+                onUpdateAction = {
+                    updateLoanRecordState(loanRecord, defaultId = loanRecordId)
+                }
+            )
+        }
+    }
+
+    fun deleteDocumentLoanRecord(document: Document, loanRecord: LoanRecord?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteDocumentInternal(
+                document = document,
+                onUpdateAction = {
+                    updateLoanRecordState(loanRecord, defaultId = loanRecordId)
+                }
+            )
+        }
+    }
+
+    //----------------------  Generic Document Operations  ----------------------------
+
+    private suspend fun addDocumentInternal(
+        documentFileName: String,
+        documentURI: Uri?,
+        context: Context,
+        id: UUID?,
+        onProgressStart: suspend () -> Unit = {},
+        onProgressEnd: suspend () -> Unit = {},
+        onUpdateAction: suspend () -> Unit = {},
+    ) {
+        if (documentURI == null || id == null)
+            return
+
+        documentsLogic.addDocument(
+            documentFileName = documentFileName,
+            associatedId = id,
+            documentURI = documentURI,
+            context = context,
+            onProgressStart = onProgressStart,
+            onProgressEnd = onProgressEnd
+        )
+
+        onUpdateAction()
+    }
+
+    private suspend fun renameDocumentInternal(
+        context: Context,
+        document: Document,
+        newFileName: String,
+        onUpdateAction: suspend () -> Unit = {},
+    ) {
+        documentsLogic.renameDocument(context, document, newFileName)
+        onUpdateAction()
+    }
+
+    private suspend fun deleteDocumentInternal(
+        document: Document,
+        onUpdateAction: suspend () -> Unit = {},
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             documentsLogic.deleteDocument(document)
-            updateDocumentsList()
+            onUpdateAction()
         }
     }
 
-    fun renameDocument(context: Context, document: Document, newFileName: String) {
+    //----------------------  Document State Update Functions  ----------------------------
+
+    private suspend fun updateLoanRecordState(
+        loanRecord: LoanRecord?,
+        showProgress: Boolean = false,
+        defaultId: UUID
+    ) {
+        val id = loanRecord?.id ?: defaultId
+
         viewModelScope.launch(Dispatchers.IO) {
-            documentsLogic.renameDocument(context, document, newFileName)
-            updateDocumentsList()
+            val list = documentsLogic.findByAssociatedId(id)
+            val newDocState = DocumentState(documentList = list, showProgress = showProgress)
+            _loanRecordDocumentState.value = newDocState
+
+            val existingDisplayLoanRecord =
+                displayLoanRecords.value.find { it.loanRecord.id == id } ?: return@launch
+
+            val newDisplayRecord =
+                existingDisplayLoanRecord.copy(loanRecordDocumentState = newDocState)
+
+            _displayLoanRecords.value = displayLoanRecords.value.replace(
+                oldComp = { d -> d.loanRecord.id == newDisplayRecord.loanRecord.id },
+                newDisplayRecord
+            )
         }
     }
 
-    //Update Document List
-    private suspend fun updateDocumentsList() {
+    private suspend fun updateLoanDocumentsList() {
         loan.value?.let { l ->
             _loanDocumentState.value = _loanDocumentState.value.copy(
                 documentList = documentsLogic.findByAssociatedId(l.id)
             )
+        }
+    }
+
+    fun updateLoanRecordDefaultId() {
+        viewModelScope.launch(Dispatchers.Default) {
+            loanRecordId = UUID.randomUUID()
+            _loanRecordDocumentState.value = DocumentState.empty()
+        }
+    }
+
+    fun updateLoanRecordDocumentState(displayLoanRecord: DisplayLoanRecord){
+        viewModelScope.launch(Dispatchers.Default) {
+            _loanRecordDocumentState.value = displayLoanRecord.loanRecordDocumentState
         }
     }
 }

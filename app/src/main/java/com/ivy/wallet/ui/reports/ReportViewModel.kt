@@ -232,8 +232,8 @@ class ReportViewModel @Inject constructor(
 
                 filterRange ?: return@filter false
 
-                (it.dateTime != null && filterRange.includes(it.dateTime)) ||
-                        (it.dueDate != null && filterRange.includes(it.dueDate))
+                (it.dateTime != null && filterRange.includesEquals(it.dateTime)) ||
+                        (it.dueDate != null && filterRange.includesEquals(it.dueDate))
             }
             .filter { trn ->
                 //Filter by Accounts

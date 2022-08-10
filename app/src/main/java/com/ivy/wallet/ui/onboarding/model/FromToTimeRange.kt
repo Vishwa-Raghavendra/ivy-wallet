@@ -30,6 +30,15 @@ data class FromToTimeRange(
     fun includes(dateTime: LocalDateTime): Boolean =
         dateTime.isAfter(from()) && dateTime.isBefore(to())
 
+    fun includesEquals(dateTime: LocalDateTime): Boolean {
+        val from = from().resetTime()
+        val to = to().resetTime()
+        val date = dateTime.resetTime()
+
+        return date.isEqual(from) ||
+                date.isAfter(from) && date.isBefore(to) || date.isEqual(to)
+    }
+
     fun toDisplay(): String {
         return when {
             from != null && to != null -> {
@@ -45,6 +54,10 @@ data class FromToTimeRange(
                 "Range"
             }
         }
+    }
+
+    private fun LocalDateTime.resetTime(): LocalDateTime {
+        return this.withHour(0).withMinute(0).withSecond(0).withNano(0)
     }
 }
 

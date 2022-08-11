@@ -160,7 +160,7 @@ class PieChartStatisticViewModel @Inject constructor(
                 categoryAmounts = categoryAmounts,
                 pieChartCategoryAmount = categoryAmounts.map { cat -> cat.copy(amount = cat.totalAmount()) },
                 selectedCategory = null,
-                showUnpackOption = categoryAmounts.size != pieChartActOutput.categoryAmounts.filter { c -> c.amount != 0.0 }.size
+                showUnpackOption = categoryAmounts.any { c -> c.subCategoryState.subCategoryTotalAmount != 0.0 }
             )
         }
     }

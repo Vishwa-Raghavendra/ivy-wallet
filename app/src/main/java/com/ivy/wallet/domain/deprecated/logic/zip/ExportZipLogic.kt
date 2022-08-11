@@ -197,6 +197,9 @@ class ExportZipLogic(
         val sourceDocumentsFolder = File(cacheFolderPath, DocumentsLogic.DOCUMENT_FOLDER_NAME)
         val targetDocumentsFolder = File(context.filesDir, DocumentsLogic.DOCUMENT_FOLDER_NAME)
 
+        if(!sourceDocumentsFolder.exists())
+            return
+
         sourceDocumentsFolder.copyRecursively(target = targetDocumentsFolder)
     }
 

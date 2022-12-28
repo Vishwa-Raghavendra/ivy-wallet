@@ -22,9 +22,10 @@ data class AccountEntity(
     @PrimaryKey
     val id: UUID = UUID.randomUUID()
 ) {
-    fun toDomain(): Account = Account(
+    fun toDomain(baseCurrency: String = ""): Account = Account(
         name = name,
         currency = currency,
+        currencyOrBaseCurrency = currency ?: baseCurrency,
         color = color,
         icon = icon,
         orderNum = orderNum,

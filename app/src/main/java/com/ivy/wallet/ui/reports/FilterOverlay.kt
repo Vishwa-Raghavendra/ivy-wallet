@@ -221,6 +221,14 @@ fun BoxWithConstraintsScope.FilterOverlay(
                 }
             )
 
+            FilterDivider()
+
+            TransfersAsIncomeExpenseFilter(
+                filter = localFilter,
+                onSetFilter = setLocalFilter,
+                nonNullFilter = nonNullFilter,
+            )
+
             Spacer(Modifier.height(196.dp))
         }
     }
@@ -336,6 +344,32 @@ fun BoxWithConstraintsScope.FilterOverlay(
             excludeKeywords = nonNullFilter(localFilter)
                 .excludeKeywords.plus(keyword)
                 .toSet().toList() //filter duplicated
+        )
+    }
+}
+
+@Composable
+fun TransfersAsIncomeExpenseFilter(
+    filter: ReportFilter?,
+    onSetFilter: (ReportFilter) -> Unit,
+    nonNullFilter: (ReportFilter?) -> ReportFilter
+) {
+    FilterTitleText(
+        text = "Others",
+        active = filter != null && filter.trnTypes.isNotEmpty(),
+        inactiveColor = Red
+    )
+
+    IvyCheckboxWithText(
+        modifier = Modifier
+            .padding(16.dp),
+        text = stringResource(R.string.transfers_as_income_expense),
+        checked = filter?.treatTransfersAsIncomeExpense ?: false
+    ) {
+        onSetFilter(
+            nonNullFilter(filter).copy(
+                treatTransfersAsIncomeExpense = !nonNullFilter(filter).treatTransfersAsIncomeExpense
+            )
         )
     }
 }

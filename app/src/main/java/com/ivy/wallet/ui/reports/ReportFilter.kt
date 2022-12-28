@@ -16,7 +16,8 @@ data class ReportFilter(
     val minAmount: Double?,
     val maxAmount: Double?,
     val includeKeywords: List<String>,
-    val excludeKeywords: List<String>
+    val excludeKeywords: List<String>,
+    val treatTransfersAsIncomeExpense: Boolean = false
 ) {
     companion object {
         fun emptyFilter(

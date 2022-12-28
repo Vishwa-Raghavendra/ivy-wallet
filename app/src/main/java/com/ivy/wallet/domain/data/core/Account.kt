@@ -9,6 +9,9 @@ import java.util.*
 data class Account(
     val name: String,
     val currency: String? = null,
+
+    val currencyOrBaseCurrency:String="",
+
     val color: Int = Green.toArgb(),
     val icon: String? = null,
     val orderNum: Double = 0.0,

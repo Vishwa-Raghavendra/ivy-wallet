@@ -1,5 +1,9 @@
 package com.ivy.wallet.ui.reports
 
+import com.ivy.wallet.core.model.GroupedTransaction
+import com.ivy.wallet.core.model.Stats
+import com.ivy.wallet.core.model.TransactionNew
+import com.ivy.wallet.core.utils.statsDummy
 import com.ivy.wallet.domain.data.TransactionHistoryItem
 import com.ivy.wallet.domain.data.core.Account
 import com.ivy.wallet.domain.data.core.Category
@@ -22,11 +26,20 @@ data class ReportScreenState(
     val accounts: List<Account> = emptyList(),
     val upcomingExpanded: Boolean = false,
     val overdueExpanded: Boolean = false,
-    val filter: ReportFilter? = null,
-    val loading: Boolean = false,
+
     val accountIdFilters: List<UUID> = emptyList(),
     val transactions: List<Transaction> = emptyList(),
     val filterOverlayVisible: Boolean = false,
     val showTransfersAsIncExpCheckbox: Boolean = false,
-    val treatTransfersAsIncExp: Boolean = false
+    val treatTransfersAsIncExp: Boolean = false,
+
+
+    val stats: Stats = statsDummy(),
+    val historyTransactionsNew: List<GroupedTransaction> = emptyList(),
+    val upcomingTransactionsNew: List<GroupedTransaction> = emptyList(),
+    val overdueTransactionsNew: List<GroupedTransaction> = emptyList(),
+
+    val loading: Boolean = false,
+    val filter: ReportFilter? = null,
+    val transactionsNew: List<TransactionNew> = emptyList()
 )

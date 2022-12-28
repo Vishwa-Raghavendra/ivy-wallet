@@ -2,9 +2,9 @@ package com.ivy.wallet.ui.reports
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -25,24 +25,24 @@ import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.frp.view.navigation.navigation
 import com.ivy.wallet.R
-import com.ivy.wallet.domain.data.TransactionType
+import com.ivy.wallet.core.domain.rememberScrollPositionLazyListState
+import com.ivy.wallet.core.model.Stats
+import com.ivy.wallet.core.model.TransactionNew
+import com.ivy.wallet.core.ui.IncomeExpenseCardsNew
+import com.ivy.wallet.core.ui.listTransactions
+import com.ivy.wallet.core.utils.*
 import com.ivy.wallet.domain.data.core.Account
 import com.ivy.wallet.domain.data.core.Category
-import com.ivy.wallet.domain.pure.data.IncomeExpensePair
-import com.ivy.wallet.stringRes
 import com.ivy.wallet.ui.IvyWalletPreview
-import com.ivy.wallet.ui.PieChartStatistic
+import com.ivy.wallet.ui.PieChartStatisticNew
 import com.ivy.wallet.ui.Report
 import com.ivy.wallet.ui.component.transaction.TransactionsDividerLine
-import com.ivy.wallet.ui.component.transaction.transactions
-import com.ivy.wallet.ui.data.AppBaseData
-import com.ivy.wallet.ui.data.DueSection
-import com.ivy.wallet.ui.ivyWalletCtx
-import com.ivy.wallet.ui.statistic.level2.IncomeExpensesCards
+import com.ivy.wallet.ui.pieChartNew.PieChartMode
 import com.ivy.wallet.ui.theme.*
 import com.ivy.wallet.ui.theme.components.*
 import com.ivy.wallet.utils.clickableNoIndication
 import com.ivy.wallet.utils.onScreenStart
+import java.util.*
 
 @ExperimentalFoundationApi
 @Composable
@@ -68,33 +68,13 @@ private fun BoxWithConstraintsScope.UI(
     state: ReportScreenState = ReportScreenState(),
     onEventHandler: (ReportScreenEvent) -> Unit = {}
 ) {
-    val ivyContext = ivyWalletCtx()
     val nav = navigation()
-    val listState = rememberLazyListState()
     val context = LocalContext.current
 
-    if (state.loading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .zIndex(1000f)
-                .background(pureBlur())
-                .clickableNoIndication {
-                    //consume clicks
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = stringResource(R.string.generating_report),
-                style = UI.typo.b1.style(
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Orange
-                )
-            )
-        }
-    }
+    LoadingScreen(loading = state.loading)
 
     LazyColumn(
+        state = rememberScrollPositionLazyListState(key = "Reports"),
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
@@ -115,61 +95,11 @@ private fun BoxWithConstraintsScope.UI(
         }
 
         item {
-            Text(
-                modifier = Modifier.padding(
-                    start = 32.dp
-                ),
-                text = stringResource(R.string.reports),
-                style = UI.typo.h2.style(
-                    fontWeight = FontWeight.ExtraBold
-                )
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            BalanceRow(
-                modifier = Modifier
-                    .padding(start = 32.dp),
-                textColor = UI.colors.pureInverse,
-                currency = state.baseCurrency,
-                balance = state.balance,
-                balanceAmountPrefix = when {
-                    state.balance > 0 -> "+"
-                    else -> null
-                }
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            IncomeExpensesCards(
-                history = state.history,
-                currency = state.baseCurrency,
-                income = state.income,
-                expenses = state.expenses,
-                hasAddButtons = false,
-                itemColor = UI.colors.pure,
-                incomeHeaderCardClicked = {
-                    if (state.transactions.isNotEmpty())
-                        nav.navigateTo(
-                            PieChartStatistic(
-                                type = TransactionType.INCOME,
-                                transactions = state.transactions,
-                                accountList = state.accountIdFilters,
-                                treatTransfersAsIncomeExpense = state.treatTransfersAsIncExp
-                            )
-                        )
-                },
-                expenseHeaderCardClicked = {
-                    if (state.transactions.isNotEmpty())
-                        nav.navigateTo(
-                            PieChartStatistic(
-                                type = TransactionType.EXPENSE,
-                                transactions = state.transactions,
-                                accountList = state.accountIdFilters,
-                                treatTransfersAsIncomeExpense = state.treatTransfersAsIncExp
-                            )
-                        )
-                }
+            HeaderComposable(
+                currencyCode = state.baseCurrency,
+                stats = state.stats,
+                accountIdFilterList = state.accountIdFilters,
+                transactionsNew = state.transactionsNew
             )
 
             if (state.showTransfersAsIncExpCheckbox) {
@@ -188,54 +118,21 @@ private fun BoxWithConstraintsScope.UI(
             } else
                 Spacer(Modifier.height(32.dp))
 
-            TransactionsDividerLine(
-                paddingHorizontal = 0.dp
-            )
+        }
 
+        item {
+            TransactionsDividerLine(paddingHorizontal = 0.dp)
             Spacer(Modifier.height(4.dp))
         }
 
         if (state.filter != null) {
-            transactions(
-                baseData = AppBaseData(
-                    baseCurrency = state.baseCurrency,
-                    categories = state.categories,
-                    accounts = state.accounts,
-                ),
-
-                upcoming = DueSection(
-                    trns = state.upcomingTransactions,
-                    stats = IncomeExpensePair(
-                        income = state.upcomingIncome.toBigDecimal(),
-                        expense = state.upcomingExpenses.toBigDecimal()
-                    ),
-                    expanded = state.upcomingExpanded
-                ),
-
-                setUpcomingExpanded = {
-                    onEventHandler.invoke(ReportScreenEvent.OnUpcomingExpanded(upcomingExpanded = it))
-                },
-
-                overdue = DueSection(
-                    trns = state.overdueTransactions,
-                    stats = IncomeExpensePair(
-                        income = state.overdueIncome.toBigDecimal(),
-                        expense = state.overdueExpenses.toBigDecimal()
-                    ),
-                    expanded = state.overdueExpanded
-                ),
-                setOverdueExpanded = {
-                    onEventHandler.invoke(ReportScreenEvent.OnOverdueExpanded(overdueExpanded = it))
-                },
-
-                history = state.history,
-                lastItemSpacer = 48.dp,
-
-                onPayOrGet = {
-                    onEventHandler.invoke(ReportScreenEvent.OnPayOrGet(transaction = it))
-                },
-                emptyStateTitle = stringRes(R.string.no_transactions),
-                emptyStateText = stringRes(R.string.no_transactions_for_your_filter)
+            listTransactions(
+                transactions = state.historyTransactionsNew,
+                currencyCode = state.baseCurrency,
+                nav = nav,
+                onDateCollapse = {
+                    onEventHandler(ReportScreenEvent.OnDateCollapse(it))
+                }
             )
         } else {
             item {
@@ -270,6 +167,132 @@ private fun BoxWithConstraintsScope.UI(
         }
     )
 }
+
+@ExperimentalFoundationApi
+@Composable
+private fun LoadingScreen(loading: Boolean) {
+    if (loading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .zIndex(1000f)
+                .background(pureBlur())
+                .clickableNoIndication {
+                    //consume clicks
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stringResource(R.string.generating_report),
+                style = UI.typo.b1.style(
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Orange
+                )
+            )
+        }
+    }
+}
+
+
+@ExperimentalFoundationApi
+@Composable
+private fun HeaderComposable(
+    currencyCode: String,
+    stats: Stats,
+    accountIdFilterList: List<UUID> = emptyList(),
+    transactionsNew: List<TransactionNew> = emptyList()
+) {
+    val nav = navigation()
+
+    ReportsText()
+
+    Spacer(Modifier.height(8.dp))
+
+    BalanceRow(currencyCode = currencyCode, balance = { stats.balance() }, onClick = {
+        nav.navigateTo(
+            PieChartStatisticNew(
+                totalStats = stats,
+                pieChartMode = PieChartMode.BALANCE,
+                showTimeModal = false,
+                transactions = transactionsNew,
+                accountIdFilterList = accountIdFilterList,
+            )
+        )
+    })
+
+    Spacer(Modifier.height(20.dp))
+
+    IncomeExpenseCardsNew(
+        currencyCode = currencyCode,
+
+        income = stats.totalIncome(),
+        expense = stats.totalExpense(),
+
+        incomeTransactionCount = stats.totalIncomeTransactionCount(),
+        expenseTransactionCount = stats.totalExpenseTransactionCount(),
+
+        expenseHeaderCardClicked = {
+            nav.navigateTo(
+                PieChartStatisticNew(
+                    totalStats = stats,
+                    pieChartMode = PieChartMode.EXPENSE,
+                    showTimeModal = false,
+                    accountIdFilterList = accountIdFilterList,
+                    transactions = transactionsNew
+                )
+            )
+        },
+        incomeHeaderCardClicked = {
+            nav.navigateTo(
+                PieChartStatisticNew(
+                    totalStats = stats,
+                    pieChartMode = PieChartMode.INCOME,
+                    showTimeModal = false,
+                    accountIdFilterList = accountIdFilterList,
+                    transactions = transactionsNew
+                )
+            )
+        }
+    )
+}
+
+@ExperimentalFoundationApi
+@Composable
+private fun ReportsText() {
+    Text(
+        modifier = Modifier.padding(
+            start = 32.dp
+        ),
+        text = stringResource(R.string.reports),
+        style = UI.typo.h2.style(
+            fontWeight = FontWeight.ExtraBold
+        )
+    )
+}
+
+@ExperimentalFoundationApi
+@Composable
+private fun BalanceRow(
+    currencyCode: String,
+    onClick: () -> Unit = {},
+    balance: () -> Double
+) {
+    BalanceRow(
+        modifier = Modifier
+            .padding(start = 32.dp)
+            .clickable {
+                onClick()
+            },
+        textColor = UI.colors.pureInverse,
+        currency = currencyCode,
+        balance = balance(),
+        balanceAmountPrefix = when {
+            balance() > 0 -> "+"
+            else -> null
+        }
+    )
+}
+
 
 @Composable
 private fun NoFilterEmptyState(
@@ -446,3 +469,76 @@ private fun Preview_NO_FILTER() {
         UI(state = state)
     }
 }
+
+//            transactions(
+//                baseData = AppBaseData(
+//                    baseCurrency = state.baseCurrency,
+//                    categories = state.categories,
+//                    accounts = state.accounts,
+//                ),
+//
+//                upcoming = DueSection(
+//                    trns = state.upcomingTransactions,
+//                    stats = IncomeExpensePair(
+//                        income = state.upcomingIncome.toBigDecimal(),
+//                        expense = state.upcomingExpenses.toBigDecimal()
+//                    ),
+//                    expanded = state.upcomingExpanded
+//                ),
+//
+//                setUpcomingExpanded = {
+//                    onEventHandler.invoke(ReportScreenEvent.OnUpcomingExpanded(upcomingExpanded = it))
+//                },
+//
+//                overdue = DueSection(
+//                    trns = state.overdueTransactions,
+//                    stats = IncomeExpensePair(
+//                        income = state.overdueIncome.toBigDecimal(),
+//                        expense = state.overdueExpenses.toBigDecimal()
+//                    ),
+//                    expanded = state.overdueExpanded
+//                ),
+//                setOverdueExpanded = {
+//                    onEventHandler.invoke(ReportScreenEvent.OnOverdueExpanded(overdueExpanded = it))
+//                },
+//
+//                history = state.history,
+//                lastItemSpacer = 48.dp,
+//
+//                onPayOrGet = {
+//                    onEventHandler.invoke(ReportScreenEvent.OnPayOrGet(transaction = it))
+//                },
+//                emptyStateTitle = stringRes(R.string.no_transactions),
+//                emptyStateText = stringRes(R.string.no_transactions_for_your_filter)
+//            )
+
+//    IncomeExpensesCards(
+//        history = state.history,
+//        currency = state.baseCurrency,
+//        income = state.income,
+//        expenses = state.expenses,
+//        hasAddButtons = false,
+//        itemColor = UI.colors.pure,
+//        incomeHeaderCardClicked = {
+//            if (state.transactions.isNotEmpty())
+//                nav.navigateTo(
+//                    PieChartStatistic(
+//                        type = TransactionType.INCOME,
+//                        transactions = state.transactions,
+//                        accountList = state.accountIdFilters,
+//                        treatTransfersAsIncomeExpense = state.treatTransfersAsIncExp
+//                    )
+//                )
+//        },
+//        expenseHeaderCardClicked = {
+//            if (state.transactions.isNotEmpty())
+//                nav.navigateTo(
+//                    PieChartStatistic(
+//                        type = TransactionType.EXPENSE,
+//                        transactions = state.transactions,
+//                        accountList = state.accountIdFilters,
+//                        treatTransfersAsIncomeExpense = state.treatTransfersAsIncExp
+//                    )
+//                )
+//        }
+//    )

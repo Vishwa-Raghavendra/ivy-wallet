@@ -64,6 +64,7 @@ import com.ivy.wallet.ui.loandetails.LoanDetailsScreen
 import com.ivy.wallet.ui.main.MainScreen
 import com.ivy.wallet.ui.onboarding.OnboardingScreen
 import com.ivy.wallet.ui.paywall.PaywallScreen
+import com.ivy.wallet.ui.pieChartNew.PieChartStatisticScreenNew
 import com.ivy.wallet.ui.planned.edit.EditPlannedScreen
 import com.ivy.wallet.ui.planned.list.PlannedPaymentsScreen
 import com.ivy.wallet.ui.reports.ReportScreen
@@ -215,6 +216,7 @@ class RootActivity : AppCompatActivity() {
             is ImagesScreen -> ImagesScreen(screen = screen)
             is ExperimentalScreen -> ExperimentalScreen(screen = screen)
             is DonateScreen -> DonateScreen(screen = screen)
+            is PieChartStatisticNew -> PieChartStatisticScreenNew(screen = screen)
             null -> {
             }
         }
@@ -515,7 +517,7 @@ class RootActivity : AppCompatActivity() {
             Intent().apply {
                 action = Intent.ACTION_VIEW
                 flags = FLAG_GRANT_READ_URI_PERMISSION
-                setDataAndType(fileUri,mimeType)
+                setDataAndType(fileUri, mimeType)
             }, null
         )
         startActivity(intent)

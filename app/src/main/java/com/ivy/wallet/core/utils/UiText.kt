@@ -1,4 +1,4 @@
-package com.ivy.wallet.utils
+package com.ivy.wallet.core.utils
 
 import android.content.Context
 import androidx.annotation.StringRes

@@ -1,6 +1,6 @@
 package com.ivy.wallet.ui.accounts
 
-import com.ivy.wallet.utils.UiText
+import com.ivy.wallet.core.utils.UiText
 
 data class AccountState(
     val baseCurrency: String = "",

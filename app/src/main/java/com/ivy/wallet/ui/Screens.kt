@@ -1,9 +1,12 @@
 package com.ivy.wallet.ui
 
 import com.ivy.frp.view.navigation.Screen
+import com.ivy.wallet.core.model.Stats
+import com.ivy.wallet.core.model.TransactionNew
 import com.ivy.wallet.domain.data.TransactionType
 import com.ivy.wallet.domain.data.core.Transaction
 import com.ivy.wallet.ui.paywall.PaywallReason
+import com.ivy.wallet.ui.pieChartNew.PieChartMode
 import java.util.*
 
 object Main : Screen
@@ -34,6 +37,14 @@ data class PieChartStatistic(
     val accountList: List<UUID> = emptyList(),
     val transactions: List<Transaction> = emptyList(),
     val treatTransfersAsIncomeExpense: Boolean = false
+) : Screen
+
+data class PieChartStatisticNew(
+    val totalStats: Stats,
+    val transactions: List<TransactionNew>,
+    val pieChartMode: PieChartMode,
+    val showTimeModal: Boolean = true,
+    val accountIdFilterList : List<UUID>
 ) : Screen
 
 data class EditPlanned(

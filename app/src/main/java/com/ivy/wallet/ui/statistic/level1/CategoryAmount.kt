@@ -7,7 +7,7 @@ import com.ivy.wallet.ui.theme.Gray
 import com.ivy.wallet.ui.theme.findContrastTextColor
 import com.ivy.wallet.ui.theme.toComposeColor
 
-data class CategoryAmount(
+ data class CategoryAmount(
     val category: Category?,
     val amount: Double,
     val associatedTransactions: List<Transaction> = emptyList(),

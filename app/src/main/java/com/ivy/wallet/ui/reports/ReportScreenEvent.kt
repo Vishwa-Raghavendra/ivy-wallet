@@ -1,6 +1,7 @@
 package com.ivy.wallet.ui.reports
 
 import android.content.Context
+import com.ivy.wallet.core.model.GroupedTransaction
 import com.ivy.wallet.domain.data.core.Transaction
 
 sealed class ReportScreenEvent {
@@ -12,4 +13,6 @@ sealed class ReportScreenEvent {
     data class OnFilterOverlayVisible(val filterOverlayVisible: Boolean) : ReportScreenEvent()
     data class OnTreatTransfersAsIncomeExpense(val transfersAsIncomeExpense: Boolean) :
         ReportScreenEvent()
+
+    data class OnDateCollapse(val date: GroupedTransaction.TransactionDate) : ReportScreenEvent()
 }

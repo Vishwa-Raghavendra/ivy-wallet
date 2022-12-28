@@ -19,7 +19,7 @@ import com.ivy.wallet.io.persistence.dao.SettingsDao
 import com.ivy.wallet.ui.IvyWalletCtx
 import com.ivy.wallet.ui.onboarding.model.TimePeriod
 import com.ivy.wallet.ui.onboarding.model.toCloseTimeRange
-import com.ivy.wallet.utils.UiText
+import com.ivy.wallet.core.utils.UiText
 import com.ivy.wallet.utils.format
 import com.ivy.wallet.utils.ioThread
 import dagger.hilt.android.lifecycle.HiltViewModel

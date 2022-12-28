@@ -192,6 +192,9 @@ data class Gradient(
 
         @Composable
         fun black() = Gradient(UI.colors.gray, UI.colors.pureInverse)
+
+
+        fun black(colors: com.ivy.design.l0_system.IvyColors) = Gradient(colors.gray, colors.pureInverse)
     }
 
     fun asHorizontalBrush() = Brush.horizontalGradient(colors = listOf(startColor, endColor))

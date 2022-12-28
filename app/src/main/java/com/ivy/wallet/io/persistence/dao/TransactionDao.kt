@@ -28,7 +28,10 @@ interface TransactionDao {
     suspend fun findAllByType(type: TransactionType): List<TransactionEntity>
 
     @Query("SELECT * FROM transactions WHERE isDeleted = 0 AND type = :type and accountId = :accountId ORDER BY dateTime DESC")
-    suspend fun findAllByTypeAndAccount(type: TransactionType, accountId: UUID): List<TransactionEntity>
+    suspend fun findAllByTypeAndAccount(
+        type: TransactionType,
+        accountId: UUID
+    ): List<TransactionEntity>
 
     @Query("SELECT * FROM transactions WHERE isDeleted = 0 AND type = :type and accountId = :accountId and dateTime >= :startDate AND dateTime <= :endDate ORDER BY dateTime DESC")
     suspend fun findAllByTypeAndAccountBetween(
@@ -52,8 +55,14 @@ interface TransactionDao {
         type: TransactionType = TransactionType.TRANSFER
     ): List<TransactionEntity>
 
+    @Query("SELECT * FROM transactions WHERE isDeleted = 0 AND (dateTime >= :startDateInMilli AND dateTime <= :endDateInMilli) OR (dueDate >= :startDateInMilli AND dueDate <= :endDateInMilli) ORDER BY dateTime DESC")
+    suspend fun findByDate(startDateInMilli: Long, endDateInMilli: Long): List<TransactionEntity>
+
     @Query("SELECT * FROM transactions WHERE isDeleted = 0 AND dateTime >= :startDate AND dateTime <= :endDate ORDER BY dateTime DESC")
-    suspend fun findAllBetween(startDate: LocalDateTime, endDate: LocalDateTime): List<TransactionEntity>
+    suspend fun findAllBetween(
+        startDate: LocalDateTime,
+        endDate: LocalDateTime
+    ): List<TransactionEntity>
 
     @Query("SELECT * FROM transactions WHERE isDeleted = 0 AND accountId = :accountId AND dateTime >= :startDate AND dateTime <= :endDate ORDER BY dateTime DESC")
     suspend fun findAllByAccountAndBetween(

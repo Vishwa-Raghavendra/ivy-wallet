@@ -36,7 +36,7 @@ import com.ivy.wallet.ui.ivyWalletCtx
 import com.ivy.wallet.ui.main.MainTab
 import com.ivy.wallet.ui.theme.*
 import com.ivy.wallet.ui.theme.components.*
-import com.ivy.wallet.utils.UiText
+import com.ivy.wallet.core.utils.UiText
 import com.ivy.wallet.utils.clickableNoIndication
 import com.ivy.wallet.utils.horizontalSwipeListener
 import com.ivy.wallet.utils.onScreenStart

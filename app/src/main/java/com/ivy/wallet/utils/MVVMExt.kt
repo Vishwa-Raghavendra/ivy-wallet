@@ -4,11 +4,9 @@ import android.os.Bundle
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.withContext
 
 fun <T> MutableLiveData<T>.asLiveData(): LiveData<T> {
     return this
@@ -43,3 +41,8 @@ suspend fun <T> computationThread(action: suspend () -> T): T = withContext(Disp
 suspend fun <T> uiThread(action: suspend () -> T): T = withContext(Dispatchers.Main) {
     return@withContext action()
 }
+
+suspend fun <T> asyncIo(action: suspend () -> T): Deferred<T> =
+    withContext(Dispatchers.IO) {
+        return@withContext this.async { action() }
+    }

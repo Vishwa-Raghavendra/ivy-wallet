@@ -1,5 +1,6 @@
 package com.ivy.wallet.domain.deprecated.logic
 
+import com.ivy.wallet.core.model.LoanRecordType
 import com.ivy.wallet.domain.data.core.LoanRecord
 import com.ivy.wallet.domain.deprecated.logic.model.CreateLoanRecordData
 import com.ivy.wallet.domain.deprecated.sync.uploader.LoanRecordUploader
@@ -16,7 +17,7 @@ class LoanRecordCreator(
     suspend fun create(
         loanId: UUID,
         data: CreateLoanRecordData,
-        loanRecordId : UUID = UUID.randomUUID(),
+        loanRecordId: UUID = UUID.randomUUID(),
         onRefreshUI: suspend (LoanRecord) -> Unit
     ): UUID? {
         val note = data.note
@@ -35,7 +36,8 @@ class LoanRecordCreator(
                         isSynced = false,
                         interest = data.interest,
                         accountId = data.account?.id,
-                        convertedAmount = data.convertedAmount
+                        convertedAmount = data.convertedAmount,
+                        loanRecordType = if (data.loanIncrease) LoanRecordType.LOAN_INCREASE else LoanRecordType.DEFAULT
                     )
 
                     dao.save(item.toEntity())

@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ivy.frp.test.TestIdlingResource
+import com.ivy.wallet.core.model.LoanRecordType
 import com.ivy.wallet.domain.action.account.AccountsAct
 import com.ivy.wallet.domain.action.category.CategoriesAct
 import com.ivy.wallet.domain.action.edit.DocumentsLogic
@@ -92,12 +93,12 @@ class LoanViewModel @Inject constructor(
                 loansAct(Unit)
                     .map { loan ->
                         val amountPaid = calculateAmountPaid(loan)
-                        val loanAmount = loan.amount
+                        val loanAmount = loan.amount + calculateLoanIncreaseAmount(loan)
                         val percentPaid = amountPaid / loanAmount
                         val currCode = findCurrencyCode(accounts.value, loan.accountId)
 
                         DisplayLoan(
-                            loan = loan,
+                            loan = loan.copy(amount = loanAmount),
                             amountPaid = amountPaid,
                             currencyCode = currCode,
                             formattedDisplayText = "${amountPaid.format(currCode)} $currCode / ${
@@ -123,6 +124,7 @@ class LoanViewModel @Inject constructor(
             TestIdlingResource.decrement()
         }
     }
+
 
     private suspend fun initialiseAccounts() {
         val accounts = accountsAct(Unit)
@@ -214,13 +216,21 @@ class LoanViewModel @Inject constructor(
         var amount = 0.0
 
         loanRecords.forEach { loanRecord ->
-            if (!loanRecord.interest) {
+            if (!loanRecord.interest && loanRecord.loanRecordType == LoanRecordType.DEFAULT) {
                 val convertedAmount = loanRecord.convertedAmount ?: loanRecord.amount
                 amount += convertedAmount
             }
         }
 
         return amount
+    }
+
+    private suspend fun calculateLoanIncreaseAmount(loan: Loan): Double {
+        return ioThread { loanRecordDao.findAllByLoanId(loanId = loan.id) }
+            .filter { it.loanRecordType == LoanRecordType.LOAN_INCREASE }
+            .sumOf {
+                it.amount
+            }
     }
 
     private suspend fun addDocument(
@@ -287,7 +297,7 @@ class LoanViewModel @Inject constructor(
                     addDocument(event.documentFileName, event.documentURI, event.context)
                 }
                 is LoanScreenEvent.OnDocumentRename -> {
-                    renameDocument(event.newFileName,event.document,event.context)
+                    renameDocument(event.newFileName, event.document, event.context)
                 }
                 is LoanScreenEvent.OnDocumentDelete -> {
                     deleteDocument(event.document)
@@ -302,7 +312,7 @@ class LoanViewModel @Inject constructor(
     }
 
 
-    private suspend fun updateDocumentsList(){
+    private suspend fun updateDocumentsList() {
         //Update Document List
         _state.value = _state.value.copy(
             documentState = _state.value.documentState.copy(

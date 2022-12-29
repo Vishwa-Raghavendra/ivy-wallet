@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ivy.frp.test.TestIdlingResource
 import com.ivy.frp.view.navigation.Navigation
+import com.ivy.wallet.core.model.LoanRecordType
 import com.ivy.wallet.domain.action.account.AccountsAct
 import com.ivy.wallet.domain.action.edit.DocumentsLogic
 import com.ivy.wallet.domain.action.loan.LoanByIdAct
@@ -146,6 +147,16 @@ class LoanDetailsViewModel @Inject constructor(
                             loanRecordDocumentState = DocumentState(documentList = documentList)
                         )
                     }
+
+                val increasedLoanAmount =
+                    (loan.value?.amount ?: 0.0) + displayLoanRecords.value.sumOf {
+                        if (it.loanRecord.loanRecordType == LoanRecordType.LOAN_INCREASE)
+                            it.loanRecord.amount
+                        else
+                            0.0
+                    }
+
+                _loan.value = _loan.value?.copy(amount = increasedLoanAmount)
             }
 
             computationThread {
@@ -155,9 +166,9 @@ class LoanDetailsViewModel @Inject constructor(
                 var loanInterestAmtPaid = 0.0
                 displayLoanRecords.value.forEach {
                     val convertedAmount = it.loanRecord.convertedAmount ?: it.loanRecord.amount
-                    if (!it.loanRecord.interest) {
+                    if (!it.loanRecord.interest && it.loanRecord.loanRecordType == LoanRecordType.DEFAULT) {
                         amtPaid += convertedAmount
-                    } else
+                    } else if(it.loanRecord.loanRecordType == LoanRecordType.DEFAULT)
                         loanInterestAmtPaid += convertedAmount
                 }
 
@@ -523,7 +534,7 @@ class LoanDetailsViewModel @Inject constructor(
         }
     }
 
-    fun updateLoanRecordDocumentState(displayLoanRecord: DisplayLoanRecord){
+    fun updateLoanRecordDocumentState(displayLoanRecord: DisplayLoanRecord) {
         viewModelScope.launch(Dispatchers.Default) {
             _loanRecordDocumentState.value = displayLoanRecord.loanRecordDocumentState
         }

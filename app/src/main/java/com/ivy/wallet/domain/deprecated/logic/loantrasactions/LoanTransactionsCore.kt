@@ -85,6 +85,7 @@ class LoanTransactionsCore(
         time: LocalDateTime? = null,
         isLoanRecord: Boolean = false,
         transaction: Transaction? = null,
+        isLoanIncrease: Boolean = false,
     ) {
         if (isLoanRecord && loanRecordId == null)
             return
@@ -100,7 +101,8 @@ class LoanTransactionsCore(
                 categoryId = category?.id ?: transaction.categoryId,
                 time = time ?: transaction.dateTime ?: timeNowUTC(),
                 isLoanRecord = isLoanRecord,
-                transaction = transaction
+                transaction = transaction,
+                isLoanIncrease = isLoanIncrease
             )
         } else if (createTransaction && transaction == null) {
             createMainTransaction(
@@ -113,7 +115,8 @@ class LoanTransactionsCore(
                 categoryId = category?.id,
                 time = time ?: timeNowUTC(),
                 isLoanRecord = isLoanRecord,
-                transaction = transaction
+                transaction = transaction,
+                isLoanIncrease = isLoanIncrease
             )
         } else {
             deleteTransaction(transaction = transaction)
@@ -130,15 +133,24 @@ class LoanTransactionsCore(
         categoryId: UUID? = null,
         time: LocalDateTime = timeNowUTC(),
         isLoanRecord: Boolean = false,
-        transaction: Transaction? = null
+        transaction: Transaction? = null,
+        isLoanIncrease: Boolean = false,
     ) {
         if (selectedAccountId == null)
             return
 
-        val transType = if (isLoanRecord)
+        val transTypeLocal = if (isLoanRecord)
             if (loanType == LoanType.BORROW) TransactionType.EXPENSE else TransactionType.INCOME
         else
             if (loanType == LoanType.BORROW) TransactionType.INCOME else TransactionType.EXPENSE
+
+        val transType = if (isLoanIncrease) {
+            if (transTypeLocal == TransactionType.EXPENSE)
+                TransactionType.INCOME
+            else
+                TransactionType.EXPENSE
+        } else
+            transTypeLocal
 
         val transCategoryId: UUID? = getCategoryId(existingCategoryId = categoryId)
 

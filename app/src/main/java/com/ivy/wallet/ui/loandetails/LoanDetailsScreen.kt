@@ -26,6 +26,7 @@ import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.frp.view.navigation.navigation
 import com.ivy.wallet.R
+import com.ivy.wallet.core.model.LoanRecordType
 import com.ivy.wallet.domain.data.IvyCurrency
 import com.ivy.wallet.domain.data.LoanType
 import com.ivy.wallet.domain.data.TransactionType
@@ -206,7 +207,8 @@ private fun BoxWithConstraintsScope.UI(
                             selectedAccount = displayLoanRecord.account,
                             createLoanRecordTransaction = displayLoanRecord.loanRecordTransaction,
                             isLoanInterest = displayLoanRecord.loanRecord.interest,
-                            loanAccountCurrencyCode = displayLoanRecord.loanCurrencyCode
+                            loanAccountCurrencyCode = displayLoanRecord.loanCurrencyCode,
+                            isLoanIncrease = displayLoanRecord.loanRecord.loanRecordType == LoanRecordType.LOAN_INCREASE
                         )
                         viewModel.updateLoanRecordDocumentState(displayLoanRecord)
                     },
@@ -800,6 +802,20 @@ private fun LoanRecordItem(
             Spacer(Modifier.height(20.dp))
         }
 
+        if (loanRecord.loanRecordType == LoanRecordType.LOAN_INCREASE) {
+            Text(
+                modifier = Modifier.padding(horizontal = 24.dp),
+                text = "Loan Increase",
+                style = UI.typo.nC.style(
+                    color = Orange,
+                    fontWeight = FontWeight.Normal
+                )
+            )
+
+            Spacer(Modifier.height(8.dp))
+        }
+
+
         Text(
             modifier = Modifier.padding(horizontal = 24.dp),
             text = loanRecord.dateTime.formatNicelyWithTime(
@@ -825,8 +841,21 @@ private fun LoanRecordItem(
         if (loanRecord.note.isNullOrEmpty())
             Spacer(Modifier.height(16.dp))
 
+        val trnsType = remember(loanRecord) {
+            val lType =
+                if (loan.type == LoanType.LEND) TransactionType.INCOME else TransactionType.EXPENSE
+
+            if (loanRecord.loanRecordType == LoanRecordType.LOAN_INCREASE) {
+                if (lType == TransactionType.INCOME)
+                    TransactionType.EXPENSE
+                else
+                    TransactionType.INCOME
+            } else
+                lType
+        }
+
         TypeAmountCurrency(
-            transactionType = if (loan.type == LoanType.LEND) TransactionType.INCOME else TransactionType.EXPENSE,
+            transactionType = trnsType,
             dueDate = null,
             currency = baseCurrency,
             amount = loanRecord.amount

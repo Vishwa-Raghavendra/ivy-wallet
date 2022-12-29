@@ -10,5 +10,6 @@ data class CreateLoanRecordData(
     val interest: Boolean = false,
     val account: Account? = null,
     val createLoanRecordTransaction: Boolean = false,
-    val convertedAmount: Double? = null
+    val convertedAmount: Double? = null,
+    val loanIncrease : Boolean = false
 )

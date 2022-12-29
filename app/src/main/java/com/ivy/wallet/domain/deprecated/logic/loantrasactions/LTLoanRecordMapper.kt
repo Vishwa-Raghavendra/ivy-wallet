@@ -1,5 +1,6 @@
 package com.ivy.wallet.domain.deprecated.logic.loantrasactions
 
+import com.ivy.wallet.core.model.LoanRecordType
 import com.ivy.wallet.domain.data.core.Loan
 import com.ivy.wallet.domain.data.core.LoanRecord
 import com.ivy.wallet.domain.data.core.Transaction
@@ -27,7 +28,8 @@ class LTLoanRecordMapper(
                 title = loanRecord.note,
                 time = loanRecord.dateTime,
                 isLoanRecord = true,
-                transaction = transaction
+                transaction = transaction,
+                isLoanIncrease = loanRecord.loanRecordType == LoanRecordType.LOAN_INCREASE
             )
         }
     }
@@ -48,6 +50,7 @@ class LTLoanRecordMapper(
                 loanId = loan.id,
                 selectedAccountId = data.account?.id,
                 isLoanRecord = true,
+                isLoanIncrease = data.loanIncrease
             )
         }
     }

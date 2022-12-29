@@ -25,6 +25,7 @@ import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.frp.test.TestingContext
 import com.ivy.wallet.R
+import com.ivy.wallet.core.model.LoanRecordType
 import com.ivy.wallet.domain.data.core.Account
 import com.ivy.wallet.domain.data.core.Document
 import com.ivy.wallet.domain.data.core.LoanRecord
@@ -55,6 +56,7 @@ data class LoanRecordModalData(
     val selectedAccount: Account? = null,
     val createLoanRecordTransaction: Boolean = false,
     val isLoanInterest: Boolean = false,
+    val isLoanIncrease : Boolean = false,
     val id: UUID = UUID.randomUUID()
 )
 
@@ -98,6 +100,11 @@ fun BoxWithConstraintsScope.LoanRecordModal(
     var loanInterest by remember(modal) {
         mutableStateOf(modal?.isLoanInterest ?: false)
     }
+
+    var loanIncrease by remember(modal) {
+        mutableStateOf(modal?.isLoanIncrease ?: false)
+    }
+
     var reCalculate by remember(modal) {
         mutableStateOf(false)
     }
@@ -141,6 +148,7 @@ fun BoxWithConstraintsScope.LoanRecordModal(
                         selectedAccount = selectedAcc,
                         createLoanRecordTransaction = createLoanRecordTrans,
                         reCalculateAmount = reCalculate,
+                        loanIncrease = loanIncrease,
 
                         onCreate = onCreate,
                         onEdit = onEdit,
@@ -285,6 +293,16 @@ fun BoxWithConstraintsScope.LoanRecordModal(
             checked = loanInterest
         ) {
             loanInterest = it
+        }
+
+        IvyCheckboxWithText(
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .align(Alignment.Start),
+            text = "Loan Increase",
+            checked = loanIncrease
+        ) {
+            loanIncrease = it
         }
 
         if (reCalculateVisible) {
@@ -447,6 +465,7 @@ private fun save(
     createLoanRecordTransaction: Boolean = false,
     selectedAccount: Account? = null,
     reCalculateAmount: Boolean = false,
+    loanIncrease:Boolean = false,
 
     onCreate: (CreateLoanRecordData) -> Unit,
     onEdit: (EditLoanRecordData) -> Unit,
@@ -458,7 +477,8 @@ private fun save(
             amount = amount,
             dateTime = dateTime,
             interest = loanRecordInterest,
-            accountId = selectedAccount?.id
+            accountId = selectedAccount?.id,
+            loanRecordType = if(loanIncrease) LoanRecordType.LOAN_INCREASE else LoanRecordType.DEFAULT
         )
         onEdit(
             EditLoanRecordData(
@@ -476,7 +496,8 @@ private fun save(
                 dateTime = dateTime,
                 interest = loanRecordInterest,
                 account = selectedAccount,
-                createLoanRecordTransaction = createLoanRecordTransaction
+                createLoanRecordTransaction = createLoanRecordTransaction,
+                loanIncrease = loanIncrease
             )
         )
     }

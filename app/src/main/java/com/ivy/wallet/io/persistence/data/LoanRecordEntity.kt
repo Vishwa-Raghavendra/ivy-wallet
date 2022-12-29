@@ -2,6 +2,7 @@ package com.ivy.wallet.io.persistence.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.ivy.wallet.core.model.LoanRecordType
 import com.ivy.wallet.domain.data.core.LoanRecord
 import java.time.LocalDateTime
 import java.util.*
@@ -20,6 +21,8 @@ data class LoanRecordEntity(
     val isSynced: Boolean = false,
     val isDeleted: Boolean = false,
 
+    val loanRecordType: LoanRecordType = LoanRecordType.DEFAULT,
+
     @PrimaryKey
     val id: UUID = UUID.randomUUID()
 ) {
@@ -33,6 +36,7 @@ data class LoanRecordEntity(
         convertedAmount = convertedAmount,
         isSynced = isSynced,
         isDeleted = isDeleted,
-        id = id
+        id = id,
+        loanRecordType = loanRecordType
     )
 }

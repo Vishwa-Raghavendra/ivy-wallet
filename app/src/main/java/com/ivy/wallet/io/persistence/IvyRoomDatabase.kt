@@ -22,7 +22,7 @@ import com.ivy.wallet.io.persistence.migration.*
             spec = IvyRoomDatabase.DeleteSEMigration::class
         )
     ],
-    version = 124,
+    version = 125,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)
@@ -76,7 +76,8 @@ abstract class IvyRoomDatabase : RoomDatabase() {
                     Migration119to120_LoanTransactions(),
                     Migration120to121_DropWishlistItem(),
                     Migration122to123_SubCategories(),
-                    Migration123to124_DocumentsTable()
+                    Migration123to124_DocumentsTable(),
+                    Migration124to125_LoanType()
                 )
                 .build()
         }

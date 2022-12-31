@@ -5,7 +5,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -24,6 +23,7 @@ import com.ivy.frp.view.FRP
 import com.ivy.frp.view.navigation.navigation
 import com.ivy.wallet.Constants
 import com.ivy.wallet.R
+import com.ivy.wallet.core.domain.rememberScrollPositionLazyListState
 import com.ivy.wallet.domain.data.IvyCurrency
 import com.ivy.wallet.domain.data.TransactionHistoryItem
 import com.ivy.wallet.domain.data.core.Transaction
@@ -103,7 +103,8 @@ private fun BoxWithConstraintsScope.UI(
                 }
             )
     ) {
-        val listState = rememberLazyListState(
+        val listState = rememberScrollPositionLazyListState(
+            key = "HomeTab",
             initialFirstVisibleItemIndex = ivyContext.transactionsListState
                 ?.firstVisibleItemIndex ?: 0,
             initialFirstVisibleItemScrollOffset = ivyContext.transactionsListState

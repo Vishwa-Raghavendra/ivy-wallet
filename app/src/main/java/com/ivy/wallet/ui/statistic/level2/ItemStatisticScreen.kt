@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +26,7 @@ import com.ivy.design.l0_system.style
 import com.ivy.frp.view.navigation.navigation
 import com.ivy.wallet.Constants
 import com.ivy.wallet.R
+import com.ivy.wallet.core.domain.rememberScrollPositionLazyListState
 import com.ivy.wallet.domain.data.IvyCurrency
 import com.ivy.wallet.domain.data.TransactionHistoryItem
 import com.ivy.wallet.domain.data.TransactionType
@@ -249,7 +249,7 @@ private fun BoxWithConstraintsScope.UI(
             }
 
     ) {
-        val listState = rememberLazyListState()
+        val listState = rememberScrollPositionLazyListState(key = "ItemStatisticTab")
         val density = LocalDensity.current
 
         Spacer(Modifier.statusBarsHeight())

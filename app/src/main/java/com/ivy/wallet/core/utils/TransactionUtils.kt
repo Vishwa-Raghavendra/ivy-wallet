@@ -6,6 +6,7 @@ import com.ivy.wallet.domain.data.core.Category
 import com.ivy.wallet.domain.data.core.Transaction
 import com.ivy.wallet.io.persistence.data.TransactionEntity
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 
 fun TransactionEntity.toTransactionDomain(
@@ -14,8 +15,17 @@ fun TransactionEntity.toTransactionDomain(
     category: Category? = null
 ): TransactionNew {
     val transactionDateInLocalTime =
-        this.dateTime?.atZone(ZoneId.systemDefault())?.toLocalDateTime()
-    val dueDateInLocalTime = this.dueDate?.atZone(ZoneId.systemDefault())?.toLocalDateTime()
+        this.dateTime
+            ?.atZone(ZoneOffset.UTC)
+            ?.toOffsetDateTime()
+            ?.atZoneSameInstant(ZoneId.systemDefault())
+            ?.toLocalDateTime()
+
+    val dueDateInLocalTime = this.dueDate
+        ?.atZone(ZoneOffset.UTC)
+        ?.toOffsetDateTime()
+        ?.atZoneSameInstant(ZoneId.systemDefault())
+        ?.toLocalDateTime()
 
     return TransactionNew(
         id = id,

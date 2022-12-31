@@ -29,7 +29,7 @@ import com.ivy.wallet.ui.theme.components.ItemIconSDefaultIcon
 import com.ivy.wallet.ui.theme.components.IvyButton
 import com.ivy.wallet.ui.theme.components.IvyIcon
 import com.ivy.wallet.ui.theme.wallet.AmountCurrencyB1
-import com.ivy.wallet.utils.formatLocal
+import com.ivy.wallet.utils.format
 import com.ivy.wallet.utils.formatNicely
 import com.ivy.wallet.utils.timeNowUTC
 import java.time.LocalDateTime
@@ -160,7 +160,7 @@ private fun PlannedPaymentsButtons(
 private fun TransactionTime(dateTime: LocalDateTime?) {
     if (dateTime != null) {
         val formattedDateText = remember(dateTime) {
-            dateTime.formatLocal(
+            dateTime.format(
                 "hh:mm a"
             )
         }

@@ -1,6 +1,6 @@
 package com.ivy.wallet.core.ui
 
-import android.util.Log
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
@@ -14,7 +14,7 @@ import com.ivy.wallet.domain.data.core.Account
 import com.ivy.wallet.domain.data.core.Category
 import com.ivy.wallet.ui.EditTransaction
 import com.ivy.wallet.ui.ItemStatistic
-import java.util.UUID
+import java.util.*
 
 fun LazyListScope.listTransactions(
     currencyCode: String,
@@ -109,12 +109,11 @@ private fun Navigation.navigateToCategoryScreen(category: Category?) {
 
 
 @Composable
-private fun TransactionNewDateDivider(
+private fun LazyItemScope.TransactionNewDateDivider(
     date: GroupedTransaction.TransactionDate,
     currencyCode: String,
     onDateCollapse: () -> Unit = {}
 ) {
-    Log.d("GGGG","Ayio"+date.stats)
     DateDividerNew(
         date = date.date,
         baseCurrency = currencyCode,

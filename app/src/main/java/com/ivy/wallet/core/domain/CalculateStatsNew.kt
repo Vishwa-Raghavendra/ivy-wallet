@@ -29,7 +29,6 @@ class CalculateStatsNew @Inject constructor(
         val transfersExpense =
             asyncIo { transferTransactions().sumTransfersExpense(baseCurrency, selectedAccountIds) }
 
-        Log.d("GGGG","HHH"+transfersExpense.await().first)
         return suspend {
             Stats(
                 income = income.await().first,

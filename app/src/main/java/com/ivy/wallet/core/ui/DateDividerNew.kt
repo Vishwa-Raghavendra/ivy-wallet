@@ -1,9 +1,12 @@
 package com.ivy.wallet.core.ui
 
 import android.util.Log
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.Text
@@ -28,8 +31,9 @@ import com.ivy.wallet.utils.format
 import com.ivy.wallet.utils.formatLocal
 import java.time.LocalDate
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DateDividerNew(
+fun LazyItemScope.DateDividerNew(
     date: LocalDate,
     onDateClick: () -> Unit = {},
     spacerTop: Dp = 24.dp,
@@ -47,7 +51,8 @@ fun DateDividerNew(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min),
+            .height(IntrinsicSize.Min)
+            .animateItemPlacement(animationSpec = tween(300)),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Spacer(Modifier.width( if(isCollapsed) 8.dp else 24.dp))
@@ -152,7 +157,6 @@ private fun DayBalance(income: Double, expenses: Double, baseCurrency: String) {
      * 1 --> Show Income
      * 2 --> Show Expenses
      */
-    Log.d("GGGG","Ayio2"+expenses)
     var balanceDisplayMode by remember(income, expenses) {
         mutableStateOf(
             if (income == 0.0)

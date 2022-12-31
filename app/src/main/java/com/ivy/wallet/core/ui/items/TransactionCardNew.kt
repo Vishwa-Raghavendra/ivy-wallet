@@ -1,9 +1,12 @@
 package com.ivy.wallet.core.ui.items
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -42,8 +45,9 @@ private data class AmountTypeStyle(
 )
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TransactionCardNew(
+fun LazyItemScope.TransactionCardNew(
     transaction: TransactionNew,
     onTransactionClick: () -> Unit,
     onAccountClick: (Account?) -> Unit,
@@ -74,6 +78,7 @@ fun TransactionCardNew(
             }
             .background(UI.colors.medium, UI.shapes.r4)
             .testTag("transaction_card_new")
+            .animateItemPlacement(animationSpec = tween(300))
     ) {
         Spacer(Modifier.height(20.dp))
 

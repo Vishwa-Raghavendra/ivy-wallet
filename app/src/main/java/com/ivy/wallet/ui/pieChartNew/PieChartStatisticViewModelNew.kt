@@ -57,8 +57,10 @@ class PieChartStatisticViewModelNew @Inject constructor(
     }
 
     private suspend fun initialiseDataNew(screen: PieChartStatisticNew) {
-        if (screen.pieChartMode != _pieChartMode.value)
+        if (screen.pieChartMode != _pieChartMode.value  || screen.totalStats != _totalStats.value) {
             updateState { PieChartStatisticStateNew() }
+            _expandedCategorySet.clear()
+        }
 
         val (pieChartDataPoints, totalStats) = pieChartStatsAct(
             PieChartsStatsActNew.Parameters(

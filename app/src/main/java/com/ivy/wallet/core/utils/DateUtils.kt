@@ -4,12 +4,17 @@ import com.ivy.wallet.ui.onboarding.model.FromToTimeRange
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 fun LocalDateTime?.atLocalDateTimeToMilliSeconds(): Long {
     return this?.atZone(ZoneId.systemDefault())?.toInstant()?.toEpochMilli() ?: -1L
 }
 
-fun LocalDateTime.fromUtcToLocalTimeNew() = this.atZone(ZoneId.systemDefault()).toLocalDateTime()
+fun LocalDateTime?.fromUtcToLocalTimeNew() = this
+    ?.atZone(ZoneOffset.UTC)
+    ?.toOffsetDateTime()
+    ?.atZoneSameInstant(ZoneId.systemDefault())
+    ?.toLocalDateTime()
 
 fun FromToTimeRange?.getDateTimeComparator(): DateTimeComparator {
     return DateTimeComparator(this)
@@ -27,8 +32,14 @@ class DateTimeComparator internal constructor(fromToTimeRange: FromToTimeRange?)
     private val upperLimit: Long
 
     init {
-        lowerLimit = fromToTimeRange?.from().atLocalDateTimeToMilliSeconds()
-        upperLimit = fromToTimeRange?.to().atEndOfDay().atLocalDateTimeToMilliSeconds()
+        lowerLimit = fromToTimeRange?.from()
+                                     .fromUtcToLocalTimeNew()
+                                     .atLocalDateTimeToMilliSeconds()
+
+        upperLimit = fromToTimeRange?.to()
+                                     .fromUtcToLocalTimeNew()
+                                     .atEndOfDay()
+                                     .atLocalDateTimeToMilliSeconds()
     }
 
     fun isDateInRange(time: LocalDateTime?): Boolean {

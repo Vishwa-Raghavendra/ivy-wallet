@@ -5,12 +5,14 @@ import com.ivy.wallet.core.model.GroupedTransaction
 import com.ivy.wallet.core.model.TransactionNew
 import com.ivy.wallet.core.utils.atLocalDateTimeToMilliSeconds
 import com.ivy.wallet.domain.data.core.Account
+import kotlinx.coroutines.*
 import java.time.LocalDate
 import javax.inject.Inject
 
 class GroupTransactionsAct @Inject constructor(
     private val calculateStatsNew: CalculateStatsNew
 ) : FPAction<GroupTransactionsAct.Input, GroupTransactionsAct.Output>() {
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
     override suspend fun Input.compose(): suspend () -> Output {
         val historyTransactions =
@@ -41,7 +43,8 @@ class GroupTransactionsAct @Inject constructor(
 
                 return@toSortedMap d2.atStartOfDay().compareTo(d1.atStartOfDay())
             }
-            .flatMap { (date, transactionsForTheDay) ->
+            .asIterable()
+            .pmap { (date, transactionsForTheDay) ->
                 if (date == null) emptyList<GroupedTransaction>()
 
                 val stats = calculateStatsNew(
@@ -58,6 +61,7 @@ class GroupTransactionsAct @Inject constructor(
 
                 listOf(transactionDate) + actualTransaction
             }
+            .flatten()
     }
 
 
@@ -72,4 +76,8 @@ class GroupTransactionsAct @Inject constructor(
         val overdue: List<GroupedTransaction>,
         val history: List<GroupedTransaction>
     )
+
+    suspend fun <A, B> Iterable<A>.pmap(f: suspend (A) -> B): List<B> = with(scope) {
+        map { async { f(it) } }.awaitAll()
+    }
 }

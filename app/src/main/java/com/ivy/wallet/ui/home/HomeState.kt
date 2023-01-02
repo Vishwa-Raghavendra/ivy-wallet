@@ -1,6 +1,7 @@
 package com.ivy.wallet.ui.home
 
 import com.ivy.design.l0_system.Theme
+import com.ivy.wallet.core.model.GroupedTransaction
 import com.ivy.wallet.domain.data.TransactionHistoryItem
 import com.ivy.wallet.domain.deprecated.logic.model.CustomerJourneyCardData
 import com.ivy.wallet.domain.pure.data.IncomeExpensePair
@@ -29,7 +30,8 @@ data class HomeState(
     val overdue: DueSection,
 
     val customerJourneyCards: List<CustomerJourneyCardData>,
-    val hideCurrentBalance: Boolean
+    val hideCurrentBalance: Boolean,
+    val historyTransactionsNew : List<GroupedTransaction> = emptyList()
 ) {
     companion object {
         fun initial(ivyWalletCtx: IvyWalletCtx): HomeState = HomeState(

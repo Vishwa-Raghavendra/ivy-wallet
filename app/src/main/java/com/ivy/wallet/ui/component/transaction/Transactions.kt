@@ -17,6 +17,8 @@ import com.ivy.design.l0_system.style
 import com.ivy.frp.view.navigation.Navigation
 import com.ivy.frp.view.navigation.navigation
 import com.ivy.wallet.R
+import com.ivy.wallet.core.model.GroupedTransaction
+import com.ivy.wallet.core.ui.historySectionNew
 import com.ivy.wallet.domain.data.TransactionHistoryDateDivider
 import com.ivy.wallet.domain.data.TransactionHistoryItem
 import com.ivy.wallet.domain.data.core.Transaction
@@ -40,6 +42,10 @@ fun LazyListScope.transactions(
 
     dateDividerMarginTop: Dp? = null,
     lastItemSpacer: Dp? = null,
+    showNewHistory: Boolean = false,
+    historyNew: List<GroupedTransaction> = emptyList(),
+    onDateCollapse: (GroupedTransaction.TransactionDate) -> Unit = {},
+    nav: Navigation,
 
     onPayOrGet: (Transaction) -> Unit,
     setUpcomingExpanded: (Boolean) -> Unit,
@@ -66,19 +72,30 @@ fun LazyListScope.transactions(
         setExpanded = setOverdueExpanded
     )
 
-    historySection(
-        baseData = baseData,
+    if (showNewHistory) {
+        historySectionNew(
+            historyTransactions = historyNew,
+            currencyCode = baseData.baseCurrency,
+            nav = nav
+        ) {
+            onDateCollapse(it)
+        }
+    } else {
+        historySection(
+            baseData = baseData,
 
-        history = history,
+            history = history,
 
-        dateDividerMarginTop = dateDividerMarginTop,
-        onPayOrGet = onPayOrGet
-    )
+            dateDividerMarginTop = dateDividerMarginTop,
+            onPayOrGet = onPayOrGet
+        )
+    }
+
 
     if (
         (upcoming == null || upcoming.trns.isEmpty()) &&
         (overdue == null || overdue.trns.isEmpty()) &&
-        history.isEmpty()
+        history.isEmpty() && historyNew.isEmpty()
     ) {
         item {
             NoTransactionsEmptyState(

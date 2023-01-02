@@ -392,7 +392,8 @@ private fun BoxWithConstraintsScope.UI(
                 emptyStateText = stringRes(
                     R.string.no_transactions_for_period,
                     period.toDisplayLong(ivyContext.startDayOfMonth)
-                )
+                ),
+                nav = nav
             )
         }
     }

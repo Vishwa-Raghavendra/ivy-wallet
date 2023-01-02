@@ -6,6 +6,11 @@ import com.ivy.frp.then
 import com.ivy.frp.thenInvokeAfter
 import com.ivy.frp.view.navigation.Navigation
 import com.ivy.frp.viewmodel.FRPViewModel
+import com.ivy.wallet.core.data.repository.TransactionRepository
+import com.ivy.wallet.core.domain.CollapseGroupTransaction
+import com.ivy.wallet.core.domain.GroupTransactionsAct
+import com.ivy.wallet.core.model.GroupedTransaction
+import com.ivy.wallet.core.utils.getDateTimeComparator
 import com.ivy.wallet.domain.action.account.AccountsAct
 import com.ivy.wallet.domain.action.category.CategoriesAct
 import com.ivy.wallet.domain.action.global.StartDayOfMonthAct
@@ -33,6 +38,7 @@ import com.ivy.wallet.ui.data.DueSection
 import com.ivy.wallet.ui.main.MainTab
 import com.ivy.wallet.ui.onboarding.model.TimePeriod
 import com.ivy.wallet.ui.onboarding.model.toCloseTimeRange
+import com.ivy.wallet.utils.asyncIo
 import com.ivy.wallet.utils.dateNowUTC
 import com.ivy.wallet.utils.ioThread
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -64,7 +70,10 @@ class HomeViewModel @Inject constructor(
     private val shouldHideBalanceAct: ShouldHideBalanceAct,
     private val updateSettingsAct: UpdateSettingsAct,
     private val updateAccCacheAct: UpdateAccCacheAct,
-    private val updateCategoriesCacheAct: UpdateCategoriesCacheAct
+    private val updateCategoriesCacheAct: UpdateCategoriesCacheAct,
+    private val transactionRepository: TransactionRepository,
+    private val groupTransactionsAct: GroupTransactionsAct,
+    private val collapseGroupTransaction: CollapseGroupTransaction,
 ) : FRPViewModel<HomeState, HomeEvent>() {
     override val _state: MutableStateFlow<HomeState> = MutableStateFlow(
         HomeState.initial(ivyWalletCtx = ivyContext)
@@ -88,8 +97,27 @@ class HomeViewModel @Inject constructor(
                 is HomeEvent.SetCurrency -> setCurrency(event.currency).fixUnit()
                 HomeEvent.SwitchTheme -> switchTheme().fixUnit()
                 is HomeEvent.DismissCustomerJourneyCard -> dismissCustomerJourneyCard(event.card)
+                is HomeEvent.OnDateCollapse -> {
+                    onDateCollapse(event.date)
+                    suspend { stateVal() }
+                }
+                else -> {
+                    suspend { stateVal() }
+                }
             }
         }
+
+    private suspend fun onDateCollapse(date: GroupedTransaction.TransactionDate) {
+        updateState { state ->
+            state.copy(
+                historyTransactionsNew = collapseGroupTransaction
+                    .filterCollapsedTransactions(
+                        date,
+                        state.historyTransactionsNew
+                    )
+            )
+        }
+    }
 
     private suspend fun start(): suspend () -> HomeState =
         suspend {
@@ -200,14 +228,34 @@ class HomeViewModel @Inject constructor(
         input: Pair<String, ClosedTimeRange>
     ): Pair<String, ClosedTimeRange> {
         val (baseCurrency, timeRange) = input
+
+
+        val dateTimeComparator =
+            timeRange.toFromToRange().getDateTimeComparator()
+
+        val trns = transactionRepository.findByDate(
+            dateTimeComparator.getStartTimeInMilli(),
+            dateTimeComparator.getEndTimeInMilli()
+        )
+
+        val groupedTransactions = groupTransactionsAct(
+            GroupTransactionsAct.Input(
+                transactions = trns,
+                selectedAccounts = stateVal().baseData.accounts.filter { it.includeInBalance },
+                treatTransfersAsIncomeExpense = false
+            )
+        )
+
         updateState {
             it.copy(
-                history = historyWithDateDivsAct(
-                    HistoryWithDateDivsAct.Input(
-                        range = timeRange,
-                        baseCurrency = baseCurrency
-                    )
-                )
+//                history = historyWithDateDivsAct(
+//                    HistoryWithDateDivsAct.Input(
+//                        range = timeRange,
+//                        baseCurrency = baseCurrency
+//                    )
+//                ),
+                history = emptyList(),
+                historyTransactionsNew = groupedTransactions.history
             )
         }
 

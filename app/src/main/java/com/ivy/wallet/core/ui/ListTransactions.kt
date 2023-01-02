@@ -22,7 +22,7 @@ fun LazyListScope.listTransactions(
     nav: Navigation,
     onDateCollapse: (GroupedTransaction.TransactionDate) -> Unit = {}
 ) {
-    historySection(
+    historySectionNew(
         historyTransactions = transactions,
         currencyCode = currencyCode,
         onDateCollapse = onDateCollapse,
@@ -31,7 +31,7 @@ fun LazyListScope.listTransactions(
 }
 
 
-private fun LazyListScope.historySection(
+fun LazyListScope.historySectionNew(
     historyTransactions: List<GroupedTransaction>,
     currencyCode: String,
     nav: Navigation,

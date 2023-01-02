@@ -1,5 +1,6 @@
 package com.ivy.wallet.ui.home
 
+import com.ivy.wallet.core.model.GroupedTransaction
 import com.ivy.wallet.domain.data.core.Transaction
 import com.ivy.wallet.domain.deprecated.logic.model.CustomerJourneyCardData
 import com.ivy.wallet.ui.onboarding.model.TimePeriod
@@ -26,6 +27,8 @@ sealed class HomeEvent {
     data class SkipAllPlanned(val transactions: List<Transaction>) : HomeEvent()
 
     data class DismissCustomerJourneyCard(val card: CustomerJourneyCardData) : HomeEvent()
+
+    data class OnDateCollapse(val date: GroupedTransaction.TransactionDate) : HomeEvent()
 
     object SelectNextMonth : HomeEvent()
     object SelectPreviousMonth : HomeEvent()

@@ -24,6 +24,7 @@ import com.ivy.frp.view.navigation.navigation
 import com.ivy.wallet.Constants
 import com.ivy.wallet.R
 import com.ivy.wallet.core.domain.rememberScrollPositionLazyListState
+import com.ivy.wallet.core.model.GroupedTransaction
 import com.ivy.wallet.domain.data.IvyCurrency
 import com.ivy.wallet.domain.data.TransactionHistoryItem
 import com.ivy.wallet.domain.data.core.Transaction
@@ -154,6 +155,7 @@ private fun BoxWithConstraintsScope.UI(
 
             stats = state.stats,
             history = state.history,
+            historyNew = state.historyTransactionsNew,
 
             customerJourneyCards = state.customerJourneyCards,
 
@@ -172,7 +174,10 @@ private fun BoxWithConstraintsScope.UI(
             setOverdueExpanded = forward<Boolean>() then2 {
                 HomeEvent.SetOverdueExpanded(it)
             } then2 onEvent,
-            onSkipAllTransactions = { skipAllModalVisible = true }
+            onSkipAllTransactions = { skipAllModalVisible = true },
+            onDateCollapse = {
+                onEvent(HomeEvent.OnDateCollapse(it))
+            }
         )
     }
 
@@ -258,6 +263,8 @@ fun HomeLazyColumn(
 
 
     customerJourneyCards: List<CustomerJourneyCardData>,
+    historyNew: List<GroupedTransaction> = emptyList(),
+    onDateCollapse: (GroupedTransaction.TransactionDate) -> Unit = {},
 
 
     setUpcomingExpanded: (Boolean) -> Unit,
@@ -347,7 +354,11 @@ fun HomeLazyColumn(
                 period.toDisplayLong(ivyContext.startDayOfMonth)
             ),
             onSkipTransaction = onSkipTransaction,
-            onSkipAllTransactions = onSkipAllTransactions
+            onSkipAllTransactions = onSkipAllTransactions,
+            nav = nav,
+            showNewHistory = true,
+            historyNew = historyNew,
+            onDateCollapse = onDateCollapse
         )
     }
 }

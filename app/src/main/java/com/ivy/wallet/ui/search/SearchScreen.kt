@@ -123,7 +123,8 @@ private fun UI(
                     R.string.no_transactions_for_query,
                     searchQueryTextFieldValue.text
                 ),
-                dateDividerMarginTop = 16.dp
+                dateDividerMarginTop = 16.dp,
+                nav = nav
             )
 
             item {

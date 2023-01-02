@@ -4,6 +4,7 @@ import com.ivy.wallet.domain.data.TransactionType
 import com.ivy.wallet.domain.data.core.Account
 import com.ivy.wallet.domain.data.core.Category
 import com.ivy.wallet.ui.onboarding.model.TimePeriod
+import com.ivy.wallet.ui.tags.TagState
 import java.util.*
 
 data class ReportFilter(
@@ -17,7 +18,8 @@ data class ReportFilter(
     val maxAmount: Double?,
     val includeKeywords: List<String>,
     val excludeKeywords: List<String>,
-    val treatTransfersAsIncomeExpense: Boolean = false
+    val treatTransfersAsIncomeExpense: Boolean = false,
+    val tagState: TagState = TagState()
 ) {
     companion object {
         fun emptyFilter(
@@ -31,7 +33,8 @@ data class ReportFilter(
             includeKeywords = emptyList(),
             excludeKeywords = emptyList(),
             minAmount = null,
-            maxAmount = null
+            maxAmount = null,
+            tagState = TagState()
         )
     }
 

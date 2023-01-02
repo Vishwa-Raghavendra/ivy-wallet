@@ -2,6 +2,7 @@ package com.ivy.wallet.ui.reports
 
 import android.content.Context
 import com.ivy.wallet.core.model.GroupedTransaction
+import com.ivy.wallet.core.model.Tag
 import com.ivy.wallet.domain.data.core.Transaction
 
 sealed class ReportScreenEvent {
@@ -15,4 +16,8 @@ sealed class ReportScreenEvent {
         ReportScreenEvent()
 
     data class OnDateCollapse(val date: GroupedTransaction.TransactionDate) : ReportScreenEvent()
+
+    data class SelectTag(val tag: Tag) : ReportScreenEvent()
+    data class DeSelectTag(val tag: Tag) : ReportScreenEvent()
+    data class OnTagSearch(val searchString: String) : ReportScreenEvent()
 }

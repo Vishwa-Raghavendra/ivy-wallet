@@ -6,11 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.ivy.frp.view.navigation.Navigation
 import com.ivy.frp.viewmodel.FRPViewModel
 import com.ivy.frp.viewmodel.readOnly
+import com.ivy.wallet.core.data.repository.TagsRepository
 import com.ivy.wallet.core.data.repository.TransactionRepository
 import com.ivy.wallet.core.domain.CalculateStatsNew
 import com.ivy.wallet.core.domain.CollapseGroupTransaction
 import com.ivy.wallet.core.domain.ExchangeActNew
 import com.ivy.wallet.core.domain.GroupTransactionsAct
+import com.ivy.wallet.core.model.Tag
 import com.ivy.wallet.core.model.TransactionNew
 import com.ivy.wallet.core.utils.getDateTimeComparator
 import com.ivy.wallet.core.utils.statsDummy
@@ -29,11 +31,11 @@ import com.ivy.wallet.ui.IvyWalletCtx
 import com.ivy.wallet.ui.RootActivity
 import com.ivy.wallet.ui.onboarding.model.TimePeriod
 import com.ivy.wallet.ui.paywall.PaywallReason
+import com.ivy.wallet.ui.tags.TagState
 import com.ivy.wallet.utils.*
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -48,7 +50,8 @@ class ReportViewModel @Inject constructor(
     private val exchangeRateNew: ExchangeActNew,
     private val calculateStatsNew: CalculateStatsNew,
     private val groupTransactionsAct: GroupTransactionsAct,
-    private val collapseGroupTransaction: CollapseGroupTransaction
+    private val collapseGroupTransaction: CollapseGroupTransaction,
+    private val tagsRepository: TagsRepository,
 ) : FRPViewModel<ReportScreenState, Nothing>() {
     override val _state: MutableStateFlow<ReportScreenState> = MutableStateFlow(
         ReportScreenState()
@@ -69,13 +72,18 @@ class ReportViewModel @Inject constructor(
 
     private var _filteredTransactions = listOf<TransactionNew>()
 
+    private val selectedTags = mutableSetOf<Tag>()
+    private var _tagSearchString: String = ""
+    var tagSearchJob: Job? = null
+
     fun start() {
         viewModelScope.launch(Dispatchers.IO) {
             updateState {
                 it.copy(
                     baseCurrency = baseCurrencyAct(Unit),
                     categories = listOf(unSpecifiedCategory) + categoriesAct(Unit),
-                    accounts = accountsAct(Unit)
+                    accounts = accountsAct(Unit),
+                    tagState = updateTagState(emptyList())
                 )
             }
         }
@@ -142,6 +150,7 @@ class ReportViewModel @Inject constructor(
     private suspend fun clearFilter() {
         _filter.value = null
         _filteredTransactions = listOf()
+        selectedTags.clear()
         updateState {
             it.copy(
                 stats = statsDummy(),
@@ -172,6 +181,7 @@ class ReportViewModel @Inject constructor(
                 excludeKeywords = filter.excludeKeywords
             )
             .filterPlannedPayments()
+            .filterTags()
     }
 
     private fun filterTransactions(): List<Transaction> {
@@ -259,10 +269,50 @@ class ReportViewModel @Inject constructor(
                         )
                     }
                 }
+                is ReportScreenEvent.SelectTag -> {
+                    selectTag(event.tag)
+                }
+                is ReportScreenEvent.DeSelectTag -> {
+                    deSelectTag(event.tag)
+                }
+                is ReportScreenEvent.OnTagSearch -> {
+                    onTagSearch(event.searchString)
+                }
                 else -> {
 
                 }
             }
+        }
+    }
+
+    private suspend fun onTagSearch(searchString: String) {
+        tagSearchJob?.cancel()
+        tagSearchJob = viewModelScope.launch(Dispatchers.Default) {
+            delay(500)
+            _tagSearchString = searchString
+            updateState {
+                it.copy(
+                    tagState = updateTagState(if (searchString.isEmpty()) emptyList() else it.tagState.allTags)
+                )
+            }
+        }
+    }
+
+    private suspend fun selectTag(tag: Tag) {
+        selectedTags.add(tag)
+        updateState {
+            it.copy(
+                tagState = updateTagState(it.tagState.allTags)
+            )
+        }
+    }
+
+    private suspend fun deSelectTag(tag: Tag) {
+        selectedTags.remove(tag)
+        updateState {
+            it.copy(
+                tagState = updateTagState(it.tagState.allTags)
+            )
         }
     }
 
@@ -390,4 +440,39 @@ class ReportViewModel @Inject constructor(
 
     private fun List<TransactionNew>.filterPlannedPayments() =
         this.filter { it.dateTime != null }
+
+    private fun List<TransactionNew>.filterTags() =
+        if (selectedTags.isEmpty())
+            this
+        else
+            this.filter {
+                it.tags.any { tag -> selectedTags.contains(tag) }
+            }
+
+    private suspend fun updateTagState(
+        givenTags: List<Tag>,
+    ): TagState {
+        val transactionTags = selectedTags
+
+        val allTags = (
+                if (givenTags.isNotEmpty())
+                    givenTags
+                else
+                    tagsRepository.getAllTags()
+                )
+            .filter {
+                if (_tagSearchString.isNotNullOrBlank()) {
+                    it.name.contains(_tagSearchString, ignoreCase = true)
+                } else
+                    true
+            }
+            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+            .sortedByDescending { transactionTags.contains(it) }
+
+        return TagState(
+            allTags,
+            transactionTags.toSet(),
+            chunkedAllTags = allTags.chunked(2)
+        )
+    }
 }

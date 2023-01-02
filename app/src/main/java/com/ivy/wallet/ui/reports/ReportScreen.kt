@@ -155,6 +155,7 @@ private fun BoxWithConstraintsScope.UI(
         accounts = state.accounts,
         categories = state.categories,
         filter = state.filter,
+        tagState = state.tagState,
         onClose = {
             onEventHandler.invoke(
                 ReportScreenEvent.OnFilterOverlayVisible(
@@ -164,6 +165,15 @@ private fun BoxWithConstraintsScope.UI(
         },
         onSetFilter = {
             onEventHandler.invoke(ReportScreenEvent.OnFilter(filter = it))
+        },
+        onTagSelected = {
+            onEventHandler.invoke(ReportScreenEvent.SelectTag(it))
+        },
+        onTagDeSelected = {
+            onEventHandler.invoke(ReportScreenEvent.DeSelectTag(it))
+        },
+        onTagSearch = {
+            onEventHandler.invoke(ReportScreenEvent.OnTagSearch(it))
         }
     )
 }

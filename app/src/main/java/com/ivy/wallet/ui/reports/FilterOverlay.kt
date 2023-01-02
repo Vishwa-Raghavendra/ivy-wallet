@@ -1,5 +1,6 @@
 package com.ivy.wallet.ui.reports
 
+import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
@@ -23,12 +24,17 @@ import androidx.compose.ui.zIndex
 import com.google.accompanist.insets.systemBarsPadding
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
+import com.ivy.design.utils.onEvent
 import com.ivy.wallet.R
+import com.ivy.wallet.core.model.Tag
 import com.ivy.wallet.domain.data.TransactionType
 import com.ivy.wallet.domain.data.core.Account
 import com.ivy.wallet.domain.data.core.Category
 import com.ivy.wallet.ui.IvyWalletPreview
+import com.ivy.wallet.ui.edit.EditTransactionScreenEvent
 import com.ivy.wallet.ui.ivyWalletCtx
+import com.ivy.wallet.ui.tags.ShowTagModal
+import com.ivy.wallet.ui.tags.TagState
 import com.ivy.wallet.ui.theme.*
 import com.ivy.wallet.ui.theme.components.*
 import com.ivy.wallet.ui.theme.modal.AddKeywordModal
@@ -43,6 +49,7 @@ import com.ivy.wallet.utils.thenIf
 import java.util.*
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BoxWithConstraintsScope.FilterOverlay(
     visible: Boolean,
@@ -50,6 +57,11 @@ fun BoxWithConstraintsScope.FilterOverlay(
     baseCurrency: String,
     accounts: List<Account>,
     categories: List<Category>,
+
+    tagState: TagState = TagState(),
+    onTagSelected: (Tag) -> Unit = {},
+    onTagDeSelected: (Tag) -> Unit = {},
+    onTagSearch: (String) -> Unit = {},
 
     filter: ReportFilter?,
     onClose: () -> Unit,
@@ -87,6 +99,16 @@ fun BoxWithConstraintsScope.FilterOverlay(
     }
 
     val excludesKeywordId by remember(excludeKeywordModalShown) {
+        mutableStateOf(UUID.randomUUID())
+    }
+
+    var tagModalVisible by remember { mutableStateOf(false) }
+
+    val localTagState by remember(tagState) {
+        mutableStateOf(tagState)
+    }
+
+    val selectedTagId by remember(tagState) {
         mutableStateOf(UUID.randomUUID())
     }
 
@@ -223,10 +245,14 @@ fun BoxWithConstraintsScope.FilterOverlay(
 
             FilterDivider()
 
-            TransfersAsIncomeExpenseFilter(
+            OthersFilter(
                 filter = localFilter,
+                tagState = localTagState,
                 onSetFilter = setLocalFilter,
                 nonNullFilter = nonNullFilter,
+                onTagButtonClicked = {
+                    tagModalVisible = true
+                }
             )
 
             Spacer(Modifier.height(196.dp))
@@ -346,11 +372,43 @@ fun BoxWithConstraintsScope.FilterOverlay(
                 .toSet().toList() //filter duplicated
         )
     }
+
+    ShowTagModal(
+        id = selectedTagId,
+        visible = tagModalVisible,
+        onDismiss = {
+            tagModalVisible = false
+        },
+        tagState = localTagState,
+        onTagAdd = {
+            // onEvent(EditTransactionScreenEvent.AddTag(it))
+        },
+        onTagEdit = { oldTag, newTag ->
+            //onEvent(EditTransactionScreenEvent.EditTag(oldTag, newTag))
+        },
+        onTagDelete = {
+            // onEvent(EditTransactionScreenEvent.DeleteTag(it))
+        },
+        onTagSelected = {
+            onTagSelected(it)
+            // onEvent(EditTransactionScreenEvent.SelectTag(it))
+        },
+        onTagDeSelected = {
+            onTagDeSelected(it)
+            // onEvent(EditTransactionScreenEvent.DeSelectTag(it))
+        },
+        onTagSearch = {
+            onTagSearch(it)
+            //onEvent(EditTransactionScreenEvent.OnTagSearch(it))
+        }
+    )
 }
 
 @Composable
-fun TransfersAsIncomeExpenseFilter(
+fun OthersFilter(
     filter: ReportFilter?,
+    tagState: TagState,
+    onTagButtonClicked: () -> Unit,
     onSetFilter: (ReportFilter) -> Unit,
     nonNullFilter: (ReportFilter?) -> ReportFilter
 ) {
@@ -362,7 +420,7 @@ fun TransfersAsIncomeExpenseFilter(
 
     IvyCheckboxWithText(
         modifier = Modifier
-            .padding(16.dp),
+            .padding(18.dp),
         text = stringResource(R.string.transfers_as_income_expense),
         checked = filter?.treatTransfersAsIncomeExpense ?: false
     ) {
@@ -372,6 +430,42 @@ fun TransfersAsIncomeExpenseFilter(
             )
         )
     }
+
+    TagFilter(
+        selectedTags = tagState.transactionTags,
+        onTagButtonClicked = onTagButtonClicked
+    )
+
+}
+
+@Composable
+fun TagFilter(
+    selectedTags: Set<Tag>,
+    onTagButtonClicked: () -> Unit
+) {
+    Text(
+        modifier = Modifier.padding(start = 32.dp),
+        text = "Tags Selected",
+        style = UI.typo.b2.style(
+            fontWeight = FontWeight.ExtraBold
+        )
+    )
+
+    Spacer(Modifier.height(12.dp))
+
+    if (selectedTags.isEmpty()) {
+        AddKeywordButton(
+            modifier = Modifier.padding(start = 24.dp),
+            text = "Select Tags"
+        ) {
+            onTagButtonClicked()
+        }
+    } else {
+        ViewTagsButton(selectedTags) {
+            onTagButtonClicked()
+        }
+    }
+
 }
 
 @Composable
@@ -440,16 +534,20 @@ private fun TypeFilterCheckbox(
     ) { checked ->
         if (checked) {
             //remove trn type
+            val trnList = nonFilter(filter).trnTypes.plus(trnType)
             onSetFilter(
                 nonFilter(filter).copy(
-                    trnTypes = nonFilter(filter).trnTypes.plus(trnType)
+                    trnTypes = trnList,
+                    treatTransfersAsIncomeExpense = trnList.contains(TransactionType.TRANSFER)
                 )
             )
         } else {
             //add trn type
+            val trnList = nonFilter(filter).trnTypes.filter { it != trnType }
             onSetFilter(
                 nonFilter(filter).copy(
-                    trnTypes = nonFilter(filter).trnTypes.filter { it != trnType }
+                    trnTypes = trnList,
+                    treatTransfersAsIncomeExpense = trnList.contains(TransactionType.TRANSFER)
                 )
             )
         }
@@ -894,10 +992,12 @@ private fun Keyword(
 
 @Composable
 private fun AddKeywordButton(
+    modifier: Modifier = Modifier,
     text: String,
     onCLick: () -> Unit
 ) {
     IvyOutlinedButton(
+        modifier = modifier,
         text = text,
         iconStart = R.drawable.ic_plus,
         padding = 10.dp,
@@ -975,4 +1075,27 @@ private fun Preview() {
             }
         )
     }
+}
+
+@Composable
+private fun ViewTagsButton(
+    selectedTags: Set<Tag>,
+    onCLick: () -> Unit
+) {
+    val contrastColor = findContrastTextColor(Orange3)
+    IvyButton(
+        modifier = Modifier.padding(start = 24.dp),
+        text = if (selectedTags.size <= 1) "${selectedTags.size}\t Tag" else "${selectedTags.size}\t Tags",
+        backgroundGradient = Gradient.solid(Orange3),
+        textStyle = UI.typo.b2.style(
+            color = contrastColor,
+            fontWeight = FontWeight.Bold
+        ),
+        iconTint = contrastColor,
+        hasGlow = false,
+        iconEnd = R.drawable.ic_onboarding_next_arrow,
+        wrapContentMode = true,
+        onClick = onCLick,
+        padding = 10.dp
+    )
 }

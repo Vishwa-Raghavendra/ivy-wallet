@@ -34,6 +34,8 @@ class ExportZipLogic(
     private val transactionDao: TransactionDao,
     private val documentDao: DocumentDao,
     private val sharedPrefs: SharedPrefs,
+    private val tagDao: TagDao,
+    private val tagTransactionDao: TagTransactionDao,
 ) {
     suspend fun exportToFile(
         context: Context,
@@ -74,6 +76,8 @@ class ExportZipLogic(
             val transactions = it.async { transactionDao.findAll() }
             val sharedPrefs = it.async { getSharedPrefsData() }
             val documents = it.async { documentDao.findAll() }
+            val tags = it.async { tagDao.findAll() }
+            val tagsTransaction = it.async { tagTransactionDao.findAll() }
 
             val gson = GsonBuilder().registerTypeAdapter(
                 LocalDateTime::class.java, object : JsonSerializer<LocalDateTime?> {
@@ -97,7 +101,9 @@ class ExportZipLogic(
                 settings = settings.await(),
                 transactions = transactions.await(),
                 documents = documents.await(),
-                sharedPrefs = sharedPrefs.await()
+                sharedPrefs = sharedPrefs.await(),
+                tags = tags.await(),
+                tagsTransaction = tagsTransaction.await()
             )
 
             gson.toJson(completeData)
@@ -271,6 +277,9 @@ class ExportZipLogic(
             }
             val documents = it.async { documentDao.save(completeData.documents) }
 
+            val tags = it.async { tagDao.save(completeData.tags) }
+            val tagsTransaction = it.async { tagTransactionDao.save(completeData.tagsTransaction) }
+
             sharedPrefs.putBoolean(
                 SharedPrefs.SHOW_NOTIFICATIONS,
                 (completeData.sharedPrefs[SharedPrefs.SHOW_NOTIFICATIONS] ?: "true").toBoolean()
@@ -295,6 +304,9 @@ class ExportZipLogic(
             plannedPayments.await()
             settings.await()
             documents.await()
+
+            tags.await()
+            tagsTransaction.await()
 
             onProgress(0.9)
         }

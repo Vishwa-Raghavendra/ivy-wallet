@@ -2,20 +2,17 @@ package com.ivy.wallet.core.data.repository
 
 import com.ivy.wallet.core.model.TransactionNew
 import com.ivy.wallet.core.utils.toTransactionDomain
-import com.ivy.wallet.io.persistence.dao.AccountDao
-import com.ivy.wallet.io.persistence.dao.CategoryDao
 import com.ivy.wallet.io.persistence.dao.TransactionDao
-import com.ivy.wallet.io.persistence.data.AccountEntity
 import com.ivy.wallet.io.persistence.data.TransactionEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
     private val accountsRepository: AccountsRepository,
-    private val categoriesRepository: CategoriesRepository
+    private val categoriesRepository: CategoriesRepository,
+    private val tagsRepository: TagsRepository
 ) {
 
     suspend fun getAllTransactions(): List<TransactionNew> {
@@ -40,10 +37,13 @@ class TransactionRepository @Inject constructor(
             .associateBy { it.id }
 
         return this.map {
+            val tags = tagsRepository.findTagsByTransactionId(it.id)
+
             it.toTransactionDomain(
                 allAccounts[it.accountId]!!,
                 allAccounts[it.toAccountId],
-                allCategories[it.categoryId]
+                allCategories[it.categoryId],
+                tags = tags
             )
         }
     }

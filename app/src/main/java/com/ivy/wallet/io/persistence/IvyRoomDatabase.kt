@@ -13,7 +13,8 @@ import com.ivy.wallet.io.persistence.migration.*
         AccountEntity::class, TransactionEntity::class, CategoryEntity::class,
         SettingsEntity::class, PlannedPaymentRuleEntity::class,
         UserEntity::class, ExchangeRateEntity::class, BudgetEntity::class,
-        LoanEntity::class, LoanRecordEntity::class, DocumentEntity::class
+        LoanEntity::class, LoanRecordEntity::class, DocumentEntity::class,
+        TagEntity::class, TagTransactionEntity::class
     ],
     autoMigrations = [
         AutoMigration(
@@ -22,7 +23,7 @@ import com.ivy.wallet.io.persistence.migration.*
             spec = IvyRoomDatabase.DeleteSEMigration::class
         )
     ],
-    version = 125,
+    version = 126,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)
@@ -48,6 +49,10 @@ abstract class IvyRoomDatabase : RoomDatabase() {
     abstract fun loanRecordDao(): LoanRecordDao
 
     abstract fun documentsDao(): DocumentDao
+
+    abstract fun tagDao(): TagDao
+
+    abstract fun tagTransactionDao(): TagTransactionDao
 
     companion object {
         const val DB_NAME = "ivywallet.db"
@@ -77,7 +82,8 @@ abstract class IvyRoomDatabase : RoomDatabase() {
                     Migration120to121_DropWishlistItem(),
                     Migration122to123_SubCategories(),
                     Migration123to124_DocumentsTable(),
-                    Migration124to125_LoanType()
+                    Migration124to125_LoanType(),
+                    Migration125to126_Tags()
                 )
                 .build()
         }
@@ -93,6 +99,8 @@ abstract class IvyRoomDatabase : RoomDatabase() {
         budgetDao().deleteAll()
         loanDao().deleteAll()
         loanRecordDao().deleteAll()
+        tagDao().deleteAll()
+        tagTransactionDao().deleteAll()
     }
 
     @DeleteColumn(tableName = "accounts", columnName = "seAccountId")

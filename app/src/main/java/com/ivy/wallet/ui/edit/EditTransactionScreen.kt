@@ -36,6 +36,9 @@ import com.ivy.wallet.ui.*
 import com.ivy.wallet.ui.documents.*
 import com.ivy.wallet.ui.edit.core.*
 import com.ivy.wallet.ui.loan.data.EditTransactionDisplayLoan
+import com.ivy.wallet.ui.tags.AddTagButton
+import com.ivy.wallet.ui.tags.ShowTagModal
+import com.ivy.wallet.ui.tags.TagState
 import com.ivy.wallet.ui.theme.components.AddPrimaryAttributeButton
 import com.ivy.wallet.ui.theme.components.ChangeTransactionTypeModal
 import com.ivy.wallet.ui.theme.components.CustomExchangeRateCard
@@ -72,6 +75,7 @@ fun BoxWithConstraintsScope.EditTransactionScreen(screen: EditTransaction) {
 
     val hasChanges by viewModel.hasChanges.collectAsState(false)
     val documentState by viewModel.documentState.collectAsState()
+    val tagState by viewModel.tagState.collectAsState()
 
     onScreenStart {
         viewModel.start(screen)
@@ -101,6 +105,7 @@ fun BoxWithConstraintsScope.EditTransactionScreen(screen: EditTransaction) {
 
         hasChanges = hasChanges,
         documentState = documentState,
+        tagState = tagState,
 
         onTitleChanged = viewModel::onTitleChanged,
         onDescriptionChanged = viewModel::onDescriptionChanged,
@@ -124,7 +129,8 @@ fun BoxWithConstraintsScope.EditTransactionScreen(screen: EditTransaction) {
         onCreateAccount = viewModel::createAccount,
         onExchangeRateChanged = {
             viewModel.updateExchangeRate(exRate = it)
-        }
+        },
+        onEvent = viewModel::onEvent
     )
 }
 
@@ -152,6 +158,7 @@ private fun BoxWithConstraintsScope.UI(
 
     hasChanges: Boolean = false,
     documentState: DocumentState = DocumentState(),
+    tagState: TagState = TagState(),
 
     onTitleChanged: (String?) -> Unit,
     onDescriptionChanged: (String?) -> Unit,
@@ -170,7 +177,8 @@ private fun BoxWithConstraintsScope.UI(
     onSetHasChanges: (hasChanges: Boolean) -> Unit,
     onDelete: () -> Unit,
     onCreateAccount: (CreateAccountData) -> Unit,
-    onExchangeRateChanged: (Double?) -> Unit = { }
+    onExchangeRateChanged: (Double?) -> Unit = { },
+    onEvent: (EditTransactionScreenEvent) -> Unit = {}
 ) {
     val viewModel: EditTransactionViewModel = viewModel()
     var chooseCategoryModalVisible by remember { mutableStateOf(false) }
@@ -189,6 +197,8 @@ private fun BoxWithConstraintsScope.UI(
         mutableStateOf(account)
     }
     var viewDocumentModalVisible by remember { mutableStateOf(false) }
+
+    var tagModalVisible by remember { mutableStateOf(false) }
 
     val amountModalId =
         remember(screen.initialTransactionId, customExchangeRateState.exchangeRate) {
@@ -313,6 +323,12 @@ private fun BoxWithConstraintsScope.UI(
                 viewDocumentModalVisible = true
             }) {
             viewDocumentModalVisible = true
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        AddTagButton(transactionTags = tagState.transactionTags) {
+            tagModalVisible = true
         }
 
         Spacer(Modifier.height(32.dp))
@@ -607,6 +623,32 @@ private fun BoxWithConstraintsScope.UI(
     )
 
     ShowFileNameModal(fileNameModalData = fileModalData)
+
+    ShowTagModal(
+        visible = tagModalVisible,
+        onDismiss = {
+            tagModalVisible = false
+        },
+        tagState = tagState,
+        onTagAdd = {
+            onEvent(EditTransactionScreenEvent.AddTag(it))
+        },
+        onTagEdit = { oldTag, newTag ->
+            onEvent(EditTransactionScreenEvent.EditTag(oldTag, newTag))
+        },
+        onTagDelete = {
+            onEvent(EditTransactionScreenEvent.DeleteTag(it))
+        },
+        onTagSelected = {
+            onEvent(EditTransactionScreenEvent.SelectTag(it))
+        },
+        onTagDeSelected = {
+            onEvent(EditTransactionScreenEvent.DeSelectTag(it))
+        },
+        onTagSearch = {
+            onEvent(EditTransactionScreenEvent.OnTagSearch(it))
+        }
+    )
 }
 
 private fun shouldFocusCategory(

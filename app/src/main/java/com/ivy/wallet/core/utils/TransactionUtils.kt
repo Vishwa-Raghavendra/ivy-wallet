@@ -1,5 +1,6 @@
 package com.ivy.wallet.core.utils
 
+import com.ivy.wallet.core.model.Tag
 import com.ivy.wallet.core.model.TransactionNew
 import com.ivy.wallet.domain.data.core.Account
 import com.ivy.wallet.domain.data.core.Category
@@ -10,7 +11,8 @@ import com.ivy.wallet.io.persistence.data.TransactionEntity
 fun TransactionEntity.toTransactionDomain(
     account: Account,
     toAccount: Account? = null,
-    category: Category? = null
+    category: Category? = null,
+    tags: List<Tag> = emptyList(),
 ): TransactionNew {
     val transactionDateInLocalTime = this.dateTime.fromUtcToLocalTimeNew()
     val dueDateInLocalTime = this.dueDate.fromUtcToLocalTimeNew()
@@ -41,7 +43,8 @@ fun TransactionEntity.toTransactionDomain(
 
 
         recurringRuleId = recurringRuleId,
-        attachmentUrl = attachmentUrl
+        attachmentUrl = attachmentUrl,
+        tags = tags
     )
 }
 

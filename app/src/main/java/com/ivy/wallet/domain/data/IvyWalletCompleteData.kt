@@ -12,5 +12,7 @@ data class IvyWalletCompleteData(
     val settings: List<SettingsEntity> = emptyList(),
     val transactions: List<TransactionEntity> = emptyList(),
     val documents: List<DocumentEntity> = emptyList(),
-    val sharedPrefs: HashMap<String, String> = HashMap()
+    val sharedPrefs: HashMap<String, String> = HashMap(),
+    val tags: List<TagEntity> = emptyList(),
+    val tagsTransaction: List<TagTransactionEntity> = emptyList()
 )

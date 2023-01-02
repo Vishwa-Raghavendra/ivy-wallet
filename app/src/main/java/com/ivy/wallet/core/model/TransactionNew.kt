@@ -41,5 +41,7 @@ data class TransactionNew(
 
     //For Imports with other Apps //TODO(Vishwa): Remove These
     val recurringRuleId: UUID? = null,
-    val attachmentUrl: String? = null
+    val attachmentUrl: String? = null,
+
+    val tags : List<Tag> = emptyList()
 ) : TransactionHistoryItem

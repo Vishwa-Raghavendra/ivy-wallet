@@ -2,11 +2,15 @@ package com.ivy.wallet.ui.edit
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ivy.frp.test.TestIdlingResource
 import com.ivy.frp.view.navigation.Navigation
+import com.ivy.wallet.core.common.AddNewTag
+import com.ivy.wallet.core.data.repository.TagsRepository
+import com.ivy.wallet.core.model.Tag
 import com.ivy.wallet.domain.action.account.AccountByIdAct
 import com.ivy.wallet.domain.action.account.AccountsAct
 import com.ivy.wallet.domain.action.category.CategoriesAct
@@ -33,14 +37,15 @@ import com.ivy.wallet.ui.EditTransaction
 import com.ivy.wallet.ui.IvyWalletCtx
 import com.ivy.wallet.ui.Main
 import com.ivy.wallet.ui.documents.DocumentState
+import com.ivy.wallet.ui.edit.EditTransactionScreenEvent.*
 import com.ivy.wallet.ui.loan.data.EditTransactionDisplayLoan
+import com.ivy.wallet.ui.tags.TagState
 import com.ivy.wallet.ui.widget.WalletBalanceReceiver
 import com.ivy.wallet.utils.*
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -70,7 +75,8 @@ class EditTransactionViewModel @Inject constructor(
     private val trnByIdAct: TrnByIdAct,
     private val categoryByIdAct: CategoryByIdAct,
     private val accountByIdAct: AccountByIdAct,
-    private val documentsLogic: DocumentsLogic
+    private val documentsLogic: DocumentsLogic,
+    private val tagsRepository: TagsRepository
 ) : ViewModel() {
 
     private val _transactionType = MutableLiveData<TransactionType>()
@@ -122,6 +128,11 @@ class EditTransactionViewModel @Inject constructor(
     private val _documentState: MutableStateFlow<DocumentState> = MutableStateFlow(DocumentState())
     val documentState = _documentState.readOnly()
 
+    private val _tagState: MutableStateFlow<TagState> = MutableStateFlow(TagState())
+    val tagState = _tagState.readOnly()
+
+    private var _tagSearchString: String = ""
+
     //This is used to when the transaction is associated with a loan/loan record,
     // used to indicate the background updating of loan/loanRecord data
     private val _backgroundProcessingStarted = MutableStateFlow(false)
@@ -138,6 +149,8 @@ class EditTransactionViewModel @Inject constructor(
 
     var title: String? = null
     private lateinit var baseUserCurrency: String
+
+    var tagSearchJob: Job? = null
 
     fun start(screen: EditTransaction) {
         viewModelScope.launch(Dispatchers.Default) {
@@ -250,6 +263,10 @@ class EditTransactionViewModel @Inject constructor(
                 DocumentState(
                     documentList = documentsLogic.findByAssociatedId(findAppropriateId(transaction))
                 )
+        }
+
+        ioThread {
+            updateTagState()
         }
 
         _customExchangeRateState.value = if (transaction.toAccountId == null)
@@ -437,7 +454,9 @@ class EditTransactionViewModel @Inject constructor(
             ioThread {
                 loadedTransaction?.let {
                     transactionDao.flagDeleted(it.id)
+                    tagsRepository.deleteAllAssociations(it.id)
                 }
+
                 closeScreen()
 
                 loadedTransaction?.let {
@@ -685,7 +704,7 @@ class EditTransactionViewModel @Inject constructor(
 
     fun addDocument(documentFileName: String, documentURI: Uri?, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (documentURI != null &&  loadedTransaction?.id != null) {
+            if (documentURI != null && loadedTransaction?.id != null) {
                 documentsLogic.addDocument(
                     documentFileName = documentFileName,
                     associatedId = findAppropriateId(loadedTransaction!!),
@@ -724,4 +743,101 @@ class EditTransactionViewModel @Inject constructor(
             )
         }
     }
+
+    fun onEvent(event: EditTransactionScreenEvent) {
+        viewModelScope.launch(Dispatchers.IO) {
+            when (event) {
+                is AddTag -> {
+                    val tag = event.tag.copy(name = event.tag.name.toLowerCaseLocal().trim())
+                    addTag(tag)
+                    updateTagState(tag)
+                }
+                is EditTag -> {
+                    editTag(event.oldTag, event.newTag)
+                    updateTagState()
+                }
+                is DeleteTag -> {
+                    deleteTag(event.tag)
+                    updateTagState()
+                }
+                is SelectTag -> {
+                    selectTag(event.tag)
+                    updateTagState()
+                }
+                is DeSelectTag -> {
+                    deSelectTag(event.tag)
+                    updateTagState()
+                }
+                is OnTagSearch -> {
+                    onTagSearch(event.searchString)
+                }
+            }
+        }
+    }
+
+    private suspend fun onTagSearch(searchString: String) {
+        tagSearchJob?.cancel()
+        tagSearchJob = MainScope().launch {
+            delay(500)
+            _tagSearchString = searchString
+            updateTagState()
+        }
+    }
+
+    private suspend fun addTag(tag: Tag) {
+        tagsRepository.saveTag(tag)
+    }
+
+    private suspend fun editTag(oldTag: Tag, newTag: Tag) {
+        tagsRepository.updateTag(newTag.copy(name = newTag.name.toLowerCaseLocal().trim()))
+    }
+
+    private suspend fun deleteTag(tag: Tag) {
+        tagsRepository.deleteTag(tag)
+    }
+
+    private suspend fun selectTag(tag: Tag) {
+        tagsRepository.associateTag(loadedTransaction!!.id, tag)
+    }
+
+    private suspend fun deSelectTag(tag: Tag) {
+        tagsRepository.deleteAssociation(loadedTransaction!!.id, tag)
+    }
+
+    private suspend fun updateTagState(
+        sortedByDescendingTag: Tag? = null,
+    ) {
+
+        val transactionTags =
+            tagsRepository.findTagsByTransactionId(loadedTransaction!!.id).toHashSet()
+
+        val allTags = tagsRepository.getAllTags()
+            .filter {
+                if (_tagSearchString.isNotNullOrBlank()) {
+                    it.name.contains(_tagSearchString, ignoreCase = true)
+                } else
+                    true
+            }
+            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+            .sortedByDescending { transactionTags.contains(it) }
+            .sortedByDescending { it.hashCode() == sortedByDescendingTag.hashCode() }
+
+
+        val chuckedList = listOf(AddNewTag()) + allTags
+
+        _tagState.value = TagState(
+            allTags,
+            transactionTags,
+            chunkedAllTags = chuckedList.chunked(2)
+        )
+    }
+}
+
+sealed class EditTransactionScreenEvent {
+    data class AddTag(val tag: Tag) : EditTransactionScreenEvent()
+    data class DeleteTag(val tag: Tag) : EditTransactionScreenEvent()
+    data class SelectTag(val tag: Tag) : EditTransactionScreenEvent()
+    data class DeSelectTag(val tag: Tag) : EditTransactionScreenEvent()
+    data class EditTag(val oldTag: Tag, val newTag: Tag) : EditTransactionScreenEvent()
+    data class OnTagSearch(val searchString: String) : EditTransactionScreenEvent()
 }

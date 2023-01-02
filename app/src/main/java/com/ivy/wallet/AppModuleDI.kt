@@ -134,6 +134,12 @@ object AppModuleDI {
     @Provides
     fun provideDocumentsDao(db: IvyRoomDatabase): DocumentDao = db.documentsDao()
 
+    @Provides
+    fun provideTagDao(db: IvyRoomDatabase): TagDao = db.tagDao()
+
+    @Provides
+    fun provideTagTransactionDao(db: IvyRoomDatabase): TagTransactionDao = db.tagTransactionDao()
+
 
     @Provides
     fun provideWalletAccountLogic(
@@ -729,7 +735,9 @@ object AppModuleDI {
         settingsDao: SettingsDao,
         transactionDao: TransactionDao,
         documentDao: DocumentDao,
-        sharedPrefs: SharedPrefs
+        sharedPrefs: SharedPrefs,
+        tagDao: TagDao,
+        tagTransactionDao: TagTransactionDao
     ): ExportZipLogic {
         return ExportZipLogic(
             accountDao,
@@ -741,7 +749,9 @@ object AppModuleDI {
             settingsDao,
             transactionDao,
             documentDao,
-            sharedPrefs
+            sharedPrefs,
+            tagDao,
+            tagTransactionDao
         )
     }
 

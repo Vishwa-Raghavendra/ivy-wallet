@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.wallet.R
+import com.ivy.wallet.core.model.Tag
 import com.ivy.wallet.core.model.TransactionNew
 import com.ivy.wallet.domain.data.TransactionType
 import com.ivy.wallet.domain.data.core.Account
@@ -72,9 +75,6 @@ fun LazyItemScope.TransactionCardNew(
             .clip(UI.shapes.r4)
             .clickable {
                 onTransactionClick()
-//                if (baseData.accounts.find { it.id == transaction.accountId } != null) {
-//                    onClick(transaction)
-//                }
             }
             .background(UI.colors.medium, UI.shapes.r4)
             .testTag("transaction_card_new")
@@ -107,7 +107,44 @@ fun LazyItemScope.TransactionCardNew(
             )
         }
 
+        if (transaction.tags.isNotEmpty()) {
+            TransactionTags(transaction.tags)
+        }
+
         Spacer(Modifier.height(20.dp))
+    }
+}
+
+@Composable
+private fun TransactionTags(tags: List<Tag>) {
+    Spacer(Modifier.height(12.dp))
+
+    LazyRow(
+        modifier = Modifier.padding(horizontal = 24.dp)
+    ) {
+        item {
+            //Tag Text
+            Text(
+                text = "Tags:",
+                style = UI.typo.nC.style(
+                    color = UI.colors.gray,
+                    fontWeight = FontWeight.Normal
+                )
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+
+        items(tags) { tag ->
+            Text(
+                text = "#${tag.name}",
+                style = UI.typo.nC.style(
+                    color = BlueLight,
+                    fontWeight = FontWeight.Normal
+                )
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+        }
     }
 }
 

@@ -1,11 +1,11 @@
 package com.ivy.wallet.core.data.repository
 
 import com.ivy.wallet.core.model.TransactionNew
+import com.ivy.wallet.core.utils.pmap
 import com.ivy.wallet.core.utils.toTransactionDomain
 import com.ivy.wallet.io.persistence.dao.TransactionDao
 import com.ivy.wallet.io.persistence.data.TransactionEntity
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import javax.inject.Inject
 
 class TransactionRepository @Inject constructor(
@@ -14,6 +14,7 @@ class TransactionRepository @Inject constructor(
     private val categoriesRepository: CategoriesRepository,
     private val tagsRepository: TagsRepository
 ) {
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
     suspend fun getAllTransactions(): List<TransactionNew> {
         return withContext(Dispatchers.IO) {
@@ -21,7 +22,7 @@ class TransactionRepository @Inject constructor(
         }
     }
 
-    suspend fun findByDate(startDateInMilli: Long, endDateInMilli: Long) : List<TransactionNew> {
+    suspend fun findByDate(startDateInMilli: Long, endDateInMilli: Long): List<TransactionNew> {
         return withContext(Dispatchers.IO) {
             transactionDao.findByDate(startDateInMilli, endDateInMilli).toDomain()
         }
@@ -36,7 +37,7 @@ class TransactionRepository @Inject constructor(
             .getAllCategories()
             .associateBy { it.id }
 
-        return this.map {
+        return this.pmap(scope) {
             val tags = tagsRepository.findTagsByTransactionId(it.id)
 
             it.toTransactionDomain(

@@ -8,6 +8,9 @@ import com.ivy.wallet.domain.data.core.ExchangeRate
 import com.ivy.wallet.stringRes
 import com.ivy.wallet.ui.theme.Gray
 import com.ivy.wallet.ui.theme.RedLight
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlin.math.roundToInt
 
 fun emptyExchangeRate() = ExchangeRate("", "", 0.0)
@@ -45,3 +48,8 @@ fun <E> MutableCollection<E>.addOrRemove(item: E) {
     else
         this.add(item)
 }
+
+suspend fun <A, B> Iterable<A>.pmap(scope: CoroutineScope, f: suspend (A) -> B): List<B> =
+    with(scope) {
+        map { async { f(it) } }.awaitAll()
+    }

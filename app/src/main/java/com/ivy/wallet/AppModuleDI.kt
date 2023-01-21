@@ -140,6 +140,9 @@ object AppModuleDI {
     @Provides
     fun provideTagTransactionDao(db: IvyRoomDatabase): TagTransactionDao = db.tagTransactionDao()
 
+    @Provides
+    fun provideMetadataDao(db: IvyRoomDatabase): MetadataDao = db.metadataDao()
+
 
     @Provides
     fun provideWalletAccountLogic(

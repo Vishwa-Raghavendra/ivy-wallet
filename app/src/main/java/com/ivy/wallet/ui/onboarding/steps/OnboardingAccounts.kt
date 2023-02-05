@@ -51,7 +51,7 @@ fun BoxWithConstraintsScope.OnboardingAccounts(
     accounts: List<AccountBalance>,
 
     onCreateAccount: (CreateAccountData) -> Unit = { },
-    onEditAccount: (Account, Double) -> Unit = { _, _ -> },
+    onEditAccount: (Account, Double, Boolean) -> Unit = { _, _, _ -> },
 
     onSkip: () -> Unit = {},
     onDone: () -> Unit = {}
@@ -213,7 +213,7 @@ fun PremiumInfo(
                 color = if (freeItemsLeft > 2) Green else Orange
             )
         )
-    } else if(!ivyWalletCtx().isPremium) {
+    } else if (!ivyWalletCtx().isPremium) {
         Spacer(Modifier.height(24.dp))
 
         BuyPremiumRow(

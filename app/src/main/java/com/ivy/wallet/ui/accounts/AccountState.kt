@@ -5,7 +5,8 @@ import com.ivy.wallet.core.utils.UiText
 data class AccountState(
     val baseCurrency: String = "",
     val accountsData: List<AccountData> = emptyList(),
-    val totalBalanceWithExcluded: Double = 0.0,
-    val totalBalanceWithExcludedText: UiText = UiText.DynamicString(""),
-    val reorderVisible: Boolean = false
+    val totalBalanceIncludedAndNonArchived: Double = 0.0,
+    val totalBalanceIncludedAndNonArchivedText: UiText = UiText.DynamicString(""),
+    val reorderVisible: Boolean = false,
+    val includeArchivedAccounts: Boolean = false,
 )

@@ -267,11 +267,11 @@ class OnboardingViewModel @Inject constructor(
     }
 
     //--------------------- Accounts ---------------------------------------------------------------
-    fun editAccount(account: Account, newBalance: Double) {
+    fun editAccount(account: Account, newBalance: Double, isAccountArchived: Boolean = false) {
         viewModelScope.launch {
             TestIdlingResource.increment()
 
-            accountCreator.editAccount(account, newBalance) {
+            accountCreator.editAccount(account, newBalance,isAccountArchived) {
                 _accounts.value = accountsWithBalance()
             }
 

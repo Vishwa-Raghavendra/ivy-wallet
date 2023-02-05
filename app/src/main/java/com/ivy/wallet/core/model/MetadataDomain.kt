@@ -13,7 +13,7 @@ data class MetadataDomain(
     val property: MetadataProperties = MetadataProperties.NONE,
     val value: String = ""
 ) {
-    fun entity(): MetadataEntity {
+    fun toEntity(): MetadataEntity {
         return MetadataEntity(id, associatedId, property, value)
     }
 }

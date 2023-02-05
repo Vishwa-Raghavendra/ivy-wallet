@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -100,7 +98,7 @@ private fun BoxWithConstraintsScope.UI(
                     Spacer(Modifier.height(4.dp))
 
                     Text(
-                        text = state.totalBalanceWithExcludedText.asString(),
+                        text = state.totalBalanceIncludedAndNonArchivedText.asString(),
                         style = UI.typo.nB2.style(
                             color = Gray,
                             fontWeight = FontWeight.Bold
@@ -118,6 +116,17 @@ private fun BoxWithConstraintsScope.UI(
             }
 
             Spacer(Modifier.height(16.dp))
+        }
+
+        item {
+            IvyCheckboxWithText(
+                modifier = Modifier
+                    .padding(start = 16.dp),
+                text = "Include Archived Accounts",
+                checked = state.includeArchivedAccounts
+            ) {
+                onEventHandler(AccountsEvent.OnShowHideArchivedAccounts(it))
+            }
         }
 
         items(state.accountsData) {
@@ -362,8 +371,8 @@ private fun PreviewAccountsTab() {
                     monthlyIncome = 400.0
                 ),
             ),
-            totalBalanceWithExcluded = 25.54,
-            totalBalanceWithExcludedText = UiText.StringResource(
+            totalBalanceIncludedAndNonArchived = 25.54,
+            totalBalanceIncludedAndNonArchivedText = UiText.StringResource(
                 R.string.total, "BGN", "25.54"
             )
         )

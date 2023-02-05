@@ -50,6 +50,7 @@ class SharedPrefs(appContext: Context) {
         const val SHOW_NOTIFICATIONS = "show_notifications"
         const val HIDE_CURRENT_BALANCE = "hide_current_balance"
         const val TRANSFERS_AS_INCOME_EXPENSE = "transfers_as_inc_exp"
+        const val INCLUDE_ARCHIVED_ACCOUNTS = "include_archived_accounts"
         //----------------------------- App Settings -----------------------------------------------
 
         //-------------------------------- Customer Journey ----------------------------------------

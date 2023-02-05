@@ -249,7 +249,7 @@ fun BoxWithConstraintsScope.LoanModal(
                         fileModalData = null
                     },
                     onFileNameSet = { fName ->
-                        onDocumentAdd(it,fName)
+                        onDocumentAdd(it, fName)
                     })
                 viewDocumentModalVisible = true
             },
@@ -308,7 +308,7 @@ fun BoxWithConstraintsScope.LoanModal(
     AccountModal(
         modal = accountModalData,
         onCreateAccount = onCreateAccount,
-        onEditAccount = { _, _ -> },
+        onEditAccount = { _, _, _ -> },
         dismiss = {
             accountModalData = null
         }

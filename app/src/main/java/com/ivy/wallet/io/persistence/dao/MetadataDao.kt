@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.ivy.wallet.core.domain.io.MetadataProperties
 import com.ivy.wallet.io.persistence.data.MetadataEntity
 import java.util.*
 
@@ -21,17 +22,17 @@ interface MetadataDao {
     @Query("SELECT * FROM metadata WHERE id = :id")
     suspend fun findById(id: UUID): MetadataEntity?
 
+    @Query("SELECT * FROM metadata WHERE associatedId = :associatedId AND property =:property")
+    suspend fun findByProperty(associatedId: UUID, property: MetadataProperties) : MetadataEntity?
+
     @Query("SELECT * FROM metadata WHERE associatedId = :associatedId")
     suspend fun findByAssociatedId(associatedId: UUID): List<MetadataEntity>
 
     @Query("DELETE FROM metadata")
     suspend fun deleteAll()
 
-    @Query("DELETE FROM metadata WHERE id = :tagId AND associatedId = :associatedId")
-    suspend fun deleteId(tagId: UUID, associatedId: UUID)
-
-    @Query("DELETE FROM metadata WHERE id = :tagId")
-    suspend fun deleteAssociationsByTagId(tagId: UUID)
+    @Query("DELETE FROM metadata WHERE associatedId = :associatedId AND property =:property")
+    suspend fun deleteMetadataProperty(associatedId: UUID, property: MetadataProperties)
 
     @Query("DELETE FROM metadata WHERE associatedId = :associatedId")
     suspend fun deleteAssociationsByAssociateId(associatedId: UUID)

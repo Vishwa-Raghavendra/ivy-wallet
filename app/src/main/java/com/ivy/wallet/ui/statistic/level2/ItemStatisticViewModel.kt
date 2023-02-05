@@ -8,6 +8,7 @@ import com.ivy.frp.test.TestIdlingResource
 import com.ivy.frp.then
 import com.ivy.frp.view.navigation.Navigation
 import com.ivy.wallet.R
+import com.ivy.wallet.core.data.repository.AccountsRepository
 import com.ivy.wallet.domain.action.account.AccTrnsAct
 import com.ivy.wallet.domain.action.account.AccountsAct
 import com.ivy.wallet.domain.action.account.CalcAccBalanceAct
@@ -71,7 +72,8 @@ class ItemStatisticViewModel @Inject constructor(
     private val calcAccBalanceAct: CalcAccBalanceAct,
     private val calcAccIncomeExpenseAct: CalcAccIncomeExpenseAct,
     private val calcTrnsIncomeExpenseAct: CalcTrnsIncomeExpenseAct,
-    private val exchangeAct: ExchangeAct
+    private val exchangeAct: ExchangeAct,
+    private val accountsRepository: AccountsRepository
 ) : ViewModel() {
 
     private val _period = MutableStateFlow(ivyContext.selectedPeriod)
@@ -207,8 +209,11 @@ class ItemStatisticViewModel @Inject constructor(
     }
 
     private suspend fun initForAccount(accountId: UUID) {
+//        val account = ioThread {
+//            accountDao.findById(accountId)?.toDomain() ?: error("account not found")
+//        }
         val account = ioThread {
-            accountDao.findById(accountId)?.toDomain() ?: error("account not found")
+            accountsRepository.findById(accountId) ?: error("account not found")
         }
         _account.value = account
         val range = period.value.toRange(ivyContext.startDayOfMonth)
@@ -605,11 +610,16 @@ class ItemStatisticViewModel @Inject constructor(
         }
     }
 
-    fun editAccount(screen: ItemStatistic, account: Account, newBalance: Double) {
+    fun editAccount(
+        screen: ItemStatistic,
+        account: Account,
+        newBalance: Double,
+        isArchived: Boolean = false
+    ) {
         viewModelScope.launch {
             TestIdlingResource.increment()
 
-            accountCreator.editAccount(account, newBalance) {
+            accountCreator.editAccount(account, newBalance, isArchived) {
                 start(
                     screen = screen,
                     period = period.value,

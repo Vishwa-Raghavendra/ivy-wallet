@@ -3,6 +3,8 @@ package com.ivy.wallet.io.persistence.data
 import androidx.compose.ui.graphics.toArgb
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.ivy.wallet.core.domain.io.MetadataProperties
+import com.ivy.wallet.core.model.MetadataDomain
 import com.ivy.wallet.domain.data.core.Account
 import com.ivy.wallet.ui.theme.Green
 import java.util.*
@@ -22,7 +24,10 @@ data class AccountEntity(
     @PrimaryKey
     val id: UUID = UUID.randomUUID()
 ) {
-    fun toDomain(baseCurrency: String = ""): Account = Account(
+    fun toDomain(
+        baseCurrency: String = "",
+        metadataProperties: List<MetadataDomain> = emptyList()
+    ): Account = Account(
         name = name,
         currency = currency,
         currencyOrBaseCurrency = currency ?: baseCurrency,
@@ -32,6 +37,8 @@ data class AccountEntity(
         includeInBalance = includeInBalance,
         isSynced = isSynced,
         isDeleted = isDeleted,
-        id = id
+        id = id,
+        metadata = metadataProperties,
+        metadataPropertyValues = metadataProperties.map { it.property }.toSet()
     )
 }

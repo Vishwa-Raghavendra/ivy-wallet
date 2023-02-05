@@ -1,6 +1,8 @@
 package com.ivy.wallet.domain.data.core
 
 import androidx.compose.ui.graphics.toArgb
+import com.ivy.wallet.core.domain.io.MetadataProperties
+import com.ivy.wallet.core.model.MetadataDomain
 import com.ivy.wallet.io.network.data.AccountDTO
 import com.ivy.wallet.io.persistence.data.AccountEntity
 import com.ivy.wallet.ui.theme.Green
@@ -20,7 +22,9 @@ data class Account(
     val isSynced: Boolean = false,
     val isDeleted: Boolean = false,
 
-    val id: UUID = UUID.randomUUID()
+    val id: UUID = UUID.randomUUID(),
+    val metadata: List<MetadataDomain> = emptyList(),
+    private val metadataPropertyValues: Set<MetadataProperties> = emptySet()
 ) {
     fun toEntity(): AccountEntity = AccountEntity(
         name = name,
@@ -43,4 +47,8 @@ data class Account(
         includeInBalance = includeInBalance,
         id = id
     )
+
+    fun isAccountArchived(): Boolean {
+        return metadataPropertyValues.contains(MetadataProperties.ARCHIVED)
+    }
 }

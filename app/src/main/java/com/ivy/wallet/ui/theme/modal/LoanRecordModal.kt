@@ -56,7 +56,7 @@ data class LoanRecordModalData(
     val selectedAccount: Account? = null,
     val createLoanRecordTransaction: Boolean = false,
     val isLoanInterest: Boolean = false,
-    val isLoanIncrease : Boolean = false,
+    val isLoanIncrease: Boolean = false,
     val id: UUID = UUID.randomUUID()
 )
 
@@ -112,7 +112,11 @@ fun BoxWithConstraintsScope.LoanRecordModal(
         mutableStateOf(modal?.loanAccountCurrencyCode != null && modal.loanAccountCurrencyCode != modal.baseCurrency)
     }
 
-    var viewDocumentModalVisible by remember(viewDocModalVisible) { mutableStateOf(viewDocModalVisible) }
+    var viewDocumentModalVisible by remember(viewDocModalVisible) {
+        mutableStateOf(
+            viewDocModalVisible
+        )
+    }
 
     var amountModalVisible by remember { mutableStateOf(false) }
     var deleteModalVisible by remember(modal) { mutableStateOf(false) }
@@ -264,7 +268,7 @@ fun BoxWithConstraintsScope.LoanRecordModal(
                         fileModalData = null
                     },
                     onFileNameSet = { fName ->
-                        onDocumentAdd(it,fName,initialRecord)
+                        onDocumentAdd(it, fName, initialRecord)
                     })
                 viewDocumentModalVisible = true
             },
@@ -360,7 +364,7 @@ fun BoxWithConstraintsScope.LoanRecordModal(
     AccountModal(
         modal = accountModalData,
         onCreateAccount = onCreateAccount,
-        onEditAccount = { _, _ -> },
+        onEditAccount = { _, _, _ -> },
         dismiss = {
             accountModalData = null
         }
@@ -465,7 +469,7 @@ private fun save(
     createLoanRecordTransaction: Boolean = false,
     selectedAccount: Account? = null,
     reCalculateAmount: Boolean = false,
-    loanIncrease:Boolean = false,
+    loanIncrease: Boolean = false,
 
     onCreate: (CreateLoanRecordData) -> Unit,
     onEdit: (EditLoanRecordData) -> Unit,
@@ -478,7 +482,7 @@ private fun save(
             dateTime = dateTime,
             interest = loanRecordInterest,
             accountId = selectedAccount?.id,
-            loanRecordType = if(loanIncrease) LoanRecordType.LOAN_INCREASE else LoanRecordType.DEFAULT
+            loanRecordType = if (loanIncrease) LoanRecordType.LOAN_INCREASE else LoanRecordType.DEFAULT
         )
         onEdit(
             EditLoanRecordData(

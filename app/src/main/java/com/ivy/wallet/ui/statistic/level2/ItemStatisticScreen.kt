@@ -159,8 +159,8 @@ fun BoxWithConstraintsScope.ItemStatisticScreen(screen: ItemStatistic) {
             viewModel.delete(screen)
         },
         onEditCategory = viewModel::editCategory,
-        onEditAccount = { acc, newBalance ->
-            viewModel.editAccount(screen, acc, newBalance)
+        onEditAccount = { acc, newBalance, isArchived ->
+            viewModel.editAccount(screen, acc, newBalance, isArchived)
         },
         onPayOrGet = { transaction ->
             viewModel.payOrGet(screen, transaction)
@@ -213,7 +213,7 @@ private fun BoxWithConstraintsScope.UI(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onSetPeriod: (TimePeriod) -> Unit,
-    onEditAccount: (Account, Double) -> Unit,
+    onEditAccount: (Account, Double, Boolean) -> Unit,
     onEditCategory: (Category) -> Unit,
     onDelete: () -> Unit,
     onPayOrGet: (Transaction) -> Unit = {},
@@ -915,7 +915,7 @@ private fun Preview_empty() {
             onPreviousMonth = {},
             onNextMonth = {},
             onDelete = {},
-            onEditAccount = { _, _ -> },
+            onEditAccount = { _, _, _ -> },
             onEditCategory = {}
         )
     }
@@ -952,7 +952,7 @@ private fun Preview_crypto() {
             onPreviousMonth = {},
             onNextMonth = {},
             onDelete = {},
-            onEditAccount = { _, _ -> },
+            onEditAccount = { _, _, _ -> },
             onEditCategory = {}
         )
     }
@@ -984,7 +984,7 @@ private fun Preview_empty_upcoming() {
             onPreviousMonth = {},
             onNextMonth = {},
             onDelete = {},
-            onEditAccount = { _, _ -> },
+            onEditAccount = { _, _, _ -> },
             onEditCategory = {},
             upcoming = listOf(
                 Transaction(UUID(1L, 2L), TransactionType.EXPENSE, BigDecimal.valueOf(10L))

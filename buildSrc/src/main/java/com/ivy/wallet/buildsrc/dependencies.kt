@@ -179,7 +179,7 @@ fun DependencyHandler.Google() {
 }
 
 fun DependencyHandler.Firebase() {
-    implementation("com.google.firebase:firebase-crashlytics:17.3.0")
+    //implementation("com.google.firebase:firebase-crashlytics:17.3.0")
     implementation("com.google.firebase:firebase-analytics:18.0.0")
     implementation("com.google.firebase:firebase-messaging:21.0.0")
 }

@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder
 import com.ivy.frp.view.navigation.Navigation
 import com.ivy.wallet.android.billing.IvyBilling
 import com.ivy.wallet.android.notification.NotificationService
+import com.ivy.wallet.core.data.repository.MetadataRepository
 import com.ivy.wallet.domain.deprecated.logic.*
 import com.ivy.wallet.domain.deprecated.logic.csv.*
 import com.ivy.wallet.domain.deprecated.logic.currency.ExchangeRatesLogic
@@ -630,7 +631,8 @@ object AppModuleDI {
         accountDao: AccountDao,
         accountUploader: AccountUploader,
         accountLogic: WalletAccountLogic,
-        transactionSync: TransactionSync
+        transactionSync: TransactionSync,
+        metadataRepository: MetadataRepository,
     ): AccountCreator {
         return AccountCreator(
             paywallLogic = paywallLogic,
@@ -638,6 +640,7 @@ object AppModuleDI {
             transactionSync = transactionSync,
             accountLogic = accountLogic,
             accountUploader = accountUploader,
+            metadataRepository = metadataRepository
         )
     }
 

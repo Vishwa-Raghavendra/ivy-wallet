@@ -39,6 +39,7 @@ data class AccountModalData(
     val adjustBalanceMode: Boolean = false,
     val forceNonZeroBalance: Boolean = false,
     val autoFocusKeyboard: Boolean = true,
+    val archiveAccount: Boolean = false,
     val id: UUID = UUID.randomUUID()
 )
 
@@ -46,7 +47,7 @@ data class AccountModalData(
 fun BoxWithConstraintsScope.AccountModal(
     modal: AccountModalData?,
     onCreateAccount: (CreateAccountData) -> Unit,
-    onEditAccount: (Account, balance: Double) -> Unit,
+    onEditAccount: (Account, balance: Double, isArchived: Boolean) -> Unit,
     dismiss: () -> Unit,
 ) {
     val account = modal?.account
@@ -67,6 +68,10 @@ fun BoxWithConstraintsScope.AccountModal(
     }
     var includeInBalance by remember(modal) {
         mutableStateOf(account?.includeInBalance ?: true)
+    }
+
+    var archiveAccount by remember(modal) {
+        mutableStateOf(account?.isAccountArchived() ?: false)
     }
 
 
@@ -96,6 +101,7 @@ fun BoxWithConstraintsScope.AccountModal(
                     icon = icon,
                     amount = amount,
                     includeInBalance = includeInBalance,
+                    archiveAccount = archiveAccount,
 
                     onCreateAccount = onCreateAccount,
                     onEditAccount = onEditAccount,
@@ -113,7 +119,9 @@ fun BoxWithConstraintsScope.AccountModal(
         Spacer(Modifier.height(32.dp))
 
         ModalTitle(
-            text = if (modal?.account != null) stringResource(R.string.edit_account) else stringResource(R.string.new_account),
+            text = if (modal?.account != null) stringResource(R.string.edit_account) else stringResource(
+                R.string.new_account
+            ),
         )
 
         Spacer(Modifier.height(24.dp))
@@ -163,6 +171,17 @@ fun BoxWithConstraintsScope.AccountModal(
                 ) {
                     includeInBalance = it
                 }
+
+                IvyCheckboxWithText(
+                    modifier = Modifier
+                        .padding(start = 16.dp)
+                        .align(Alignment.Start),
+                    text = "Archive Account",
+                    checked = archiveAccount
+                ) {
+                    archiveAccount = it
+                }
+
             },
             label = stringResource(R.string.enter_account_balance).uppercase(),
             currency = currencyCode,
@@ -195,6 +214,8 @@ fun BoxWithConstraintsScope.AccountModal(
                 icon = icon,
                 amount = newAmount,
                 includeInBalance = includeInBalance,
+                archiveAccount = archiveAccount,
+
 
                 onCreateAccount = onCreateAccount,
                 onEditAccount = onEditAccount,
@@ -237,9 +258,10 @@ private fun save(
     icon: String?,
     amount: Double,
     includeInBalance: Boolean,
+    archiveAccount: Boolean = false,
 
     onCreateAccount: (CreateAccountData) -> Unit,
-    onEditAccount: (Account, balance: Double) -> Unit,
+    onEditAccount: (Account, balance: Double, isArchived: Boolean) -> Unit,
     dismiss: () -> Unit
 ) {
     if (account != null) {
@@ -251,7 +273,8 @@ private fun save(
                 icon = icon,
                 color = color.toArgb()
             ),
-            amount
+            amount,
+            archiveAccount
         )
     } else {
         onCreateAccount(
@@ -261,7 +284,8 @@ private fun save(
                 color = color,
                 icon = icon,
                 balance = amount,
-                includeBalance = includeInBalance
+                includeBalance = includeInBalance,
+                archiveAccount = archiveAccount
             )
         )
     }
@@ -322,7 +346,7 @@ private fun Preview() {
                 balance = 0.0
             ),
             onCreateAccount = { },
-            onEditAccount = { _, _ -> }) {
+            onEditAccount = { _, _, _ -> }) {
 
         }
     }

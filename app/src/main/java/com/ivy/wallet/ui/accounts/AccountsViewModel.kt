@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.ivy.frp.test.TestIdlingResource
 import com.ivy.frp.viewmodel.FRPViewModel
 import com.ivy.wallet.R
+import com.ivy.wallet.core.data.repository.AccountsRepository
 import com.ivy.wallet.domain.action.account.AccountsAct
 import com.ivy.wallet.domain.action.settings.BaseCurrencyAct
 import com.ivy.wallet.domain.action.viewmodel.account.AccountDataAct
@@ -20,6 +21,7 @@ import com.ivy.wallet.ui.IvyWalletCtx
 import com.ivy.wallet.ui.onboarding.model.TimePeriod
 import com.ivy.wallet.ui.onboarding.model.toCloseTimeRange
 import com.ivy.wallet.core.utils.UiText
+import com.ivy.wallet.core.utils.roundTo2Digits
 import com.ivy.wallet.utils.format
 import com.ivy.wallet.utils.ioThread
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,9 +44,12 @@ class AccountsViewModel @Inject constructor(
     private val accountsAct: AccountsAct,
     private val calcWalletBalanceAct: CalcWalletBalanceAct,
     private val baseCurrencyAct: BaseCurrencyAct,
-    private val accountDataAct: AccountDataAct
+    private val accountDataAct: AccountDataAct,
+    private val accountsRepository: AccountsRepository,
 ) : FRPViewModel<AccountState, Unit>() {
     override val _state: MutableStateFlow<AccountState> = MutableStateFlow(AccountState())
+
+    private val _accountDataList = MutableStateFlow(emptyList<AccountData>())
 
     override suspend fun handleEvent(event: Unit): suspend () -> AccountState {
         TODO("Not yet implemented")
@@ -74,12 +79,15 @@ class AccountsViewModel @Inject constructor(
         val range = period.toRange(ivyContext.startDayOfMonth)
 
         val baseCurrencyCode = baseCurrencyAct(Unit)
-        val accs = accountsAct(Unit)
+        val accs = accountsRepository.getAllAccounts()
 
         val includeTransfersInCalc =
             sharedPrefs.getBoolean(SharedPrefs.TRANSFERS_AS_INCOME_EXPENSE, false)
 
-        val accountsDataList = accountDataAct(
+        val includeArchivedAccounts =
+            sharedPrefs.getBoolean(SharedPrefs.INCLUDE_ARCHIVED_ACCOUNTS, false)
+
+        _accountDataList.value = accountDataAct(
             AccountDataAct.Input(
                 accounts = accs,
                 range = range.toCloseTimeRange(),
@@ -88,23 +96,33 @@ class AccountsViewModel @Inject constructor(
             )
         )
 
-        val totalBalanceWithExcluded = calcWalletBalanceAct(
-            CalcWalletBalanceAct.Input(
-                baseCurrency = baseCurrencyCode,
-                withExcluded = true
-            )
-        ).toDouble()
+//        val totalBalanceWithExcluded = calcWalletBalanceAct(
+//            CalcWalletBalanceAct.Input(
+//                baseCurrency = baseCurrencyCode,
+//                withExcluded = true
+//            )
+//        ).toDouble()
+//
+        val totalBalanceWithExcluded =
+            _accountDataList.value
+                .filter { it.account.includeInBalance && !it.account.isAccountArchived() }
+                .sumOf {
+                    it.balance
+                }.roundTo2Digits()
 
         updateState {
             it.copy(
                 baseCurrency = baseCurrencyCode,
-                accountsData = accountsDataList,
-                totalBalanceWithExcluded = totalBalanceWithExcluded,
-                totalBalanceWithExcludedText = UiText.StringResource(
+                accountsData = _accountDataList.value.withShowHideArchivedAccounts(
+                    includeArchivedAccounts
+                ),
+                totalBalanceIncludedAndNonArchived = totalBalanceWithExcluded,
+                totalBalanceIncludedAndNonArchivedText = UiText.StringResource(
                     R.string.total, baseCurrencyCode, totalBalanceWithExcluded.format(
                         baseCurrencyCode
                     )
-                )
+                ),
+                includeArchivedAccounts = includeArchivedAccounts
             )
         }
 
@@ -154,12 +172,34 @@ class AccountsViewModel @Inject constructor(
         }
     }
 
+    private suspend fun showHideArchivedAccounts(showArchivedAccounts: Boolean) {
+        sharedPrefs.putBoolean(SharedPrefs.INCLUDE_ARCHIVED_ACCOUNTS, showArchivedAccounts)
+        updateState {
+            it.copy(
+                includeArchivedAccounts = showArchivedAccounts,
+                accountsData = _accountDataList.value.withShowHideArchivedAccounts(
+                    showArchivedAccounts
+                )
+            )
+        }
+    }
+
+    private fun List<AccountData>.withShowHideArchivedAccounts(showArchivedAccounts: Boolean = false): List<AccountData> {
+        return this.filter { accData ->
+            if (showArchivedAccounts)
+                true
+            else
+                !accData.account.isAccountArchived()
+        }
+    }
+
     fun onEvent(event: AccountsEvent) {
         viewModelScope.launch(Dispatchers.Default) {
             when (event) {
                 is AccountsEvent.OnReorder -> reorder(event.reorderedList)
                 is AccountsEvent.OnEditAccount -> editAccount(event.editedAccount, event.newBalance)
                 is AccountsEvent.OnReorderModalVisible -> reorderModalVisible(event.reorderVisible)
+                is AccountsEvent.OnShowHideArchivedAccounts -> showHideArchivedAccounts(event.showHideArchivedAccounts)
             }
         }
     }

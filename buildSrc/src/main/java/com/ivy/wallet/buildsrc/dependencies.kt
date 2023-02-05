@@ -22,8 +22,8 @@ import org.gradle.kotlin.dsl.project
 
 object Project {
     //Version
-    const val versionName = "4.8.3"
-    const val versionCode = 135
+    const val versionName = "4.9.3"
+    const val versionCode = 140
 
     //Compile SDK & Build Tools
     const val compileSdkVersion = 31

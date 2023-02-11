@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ivy.frp.test.TestIdlingResource
+import com.ivy.wallet.core.domain.ExchangeActNew
 import com.ivy.wallet.core.model.LoanRecordType
 import com.ivy.wallet.domain.action.account.AccountsAct
 import com.ivy.wallet.domain.action.category.CategoriesAct
@@ -55,7 +56,8 @@ class LoanViewModel @Inject constructor(
     private val loansAct: LoansAct,
     private val accountsAct: AccountsAct,
     private val categoriesAct: CategoriesAct,
-    private val documentsLogic: DocumentsLogic
+    private val documentsLogic: DocumentsLogic,
+    private val exchangeActNew: ExchangeActNew,
 ) : ViewModel() {
 
     private val _baseCurrencyCode = MutableStateFlow(getDefaultFIATCurrency().currencyCode)
@@ -226,10 +228,15 @@ class LoanViewModel @Inject constructor(
     }
 
     private suspend fun calculateLoanIncreaseAmount(loan: Loan): Double {
+        val accountHashMap = _accounts.value.associateBy { it.id }
+
         return ioThread { loanRecordDao.findAllByLoanId(loanId = loan.id) }
             .filter { it.loanRecordType == LoanRecordType.LOAN_INCREASE }
             .sumOf {
-                it.amount
+                val fromCurrency = accountHashMap[it.accountId]?.currency ?: baseCurrencyCode.value
+                val toCurrency = accountHashMap[loan.accountId]?.currency ?: baseCurrencyCode.value
+
+                exchangeActNew.exchangeAmount(it.amount, fromCurrency, toCurrency)
             }
     }
 

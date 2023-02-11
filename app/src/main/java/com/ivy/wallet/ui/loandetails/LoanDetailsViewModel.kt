@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ivy.frp.test.TestIdlingResource
 import com.ivy.frp.view.navigation.Navigation
+import com.ivy.wallet.core.domain.ExchangeActNew
 import com.ivy.wallet.core.model.LoanRecordType
 import com.ivy.wallet.domain.action.account.AccountsAct
 import com.ivy.wallet.domain.action.edit.DocumentsLogic
@@ -52,7 +53,8 @@ class LoanDetailsViewModel @Inject constructor(
     private val nav: Navigation,
     private val accountsAct: AccountsAct,
     private val loanByIdAct: LoanByIdAct,
-    private val documentsLogic: DocumentsLogic
+    private val documentsLogic: DocumentsLogic,
+    private val exchangeActNew: ExchangeActNew,
 ) : ViewModel() {
 
     private val _baseCurrency = MutableStateFlow("")
@@ -150,9 +152,18 @@ class LoanDetailsViewModel @Inject constructor(
 
                 val increasedLoanAmount =
                     (loan.value?.amount ?: 0.0) + displayLoanRecords.value.sumOf {
-                        if (it.loanRecord.loanRecordType == LoanRecordType.LOAN_INCREASE)
-                            it.loanRecord.amount
-                        else
+                        if (it.loanRecord.loanRecordType == LoanRecordType.LOAN_INCREASE) {
+                            val fromCurrency = it.account?.currency ?: defaultCurrencyCode
+                            val toCurrency =
+                                accounts.value.find { acc -> acc.id == loan.value?.accountId }?.currency
+                                    ?: defaultCurrencyCode
+
+                            exchangeActNew.exchangeAmount(
+                                it.loanRecord.amount,
+                                fromCurrency,
+                                toCurrency
+                            )
+                        } else
                             0.0
                     }
 
@@ -168,7 +179,7 @@ class LoanDetailsViewModel @Inject constructor(
                     val convertedAmount = it.loanRecord.convertedAmount ?: it.loanRecord.amount
                     if (!it.loanRecord.interest && it.loanRecord.loanRecordType == LoanRecordType.DEFAULT) {
                         amtPaid += convertedAmount
-                    } else if(it.loanRecord.loanRecordType == LoanRecordType.DEFAULT)
+                    } else if (it.loanRecord.loanRecordType == LoanRecordType.DEFAULT)
                         loanInterestAmtPaid += convertedAmount
                 }
 

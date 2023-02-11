@@ -108,9 +108,10 @@ class LoanDetailsViewModel @Inject constructor(
 
             _accounts.value = accountsAct(Unit)
 
-            _loan.value = loanByIdAct(loanId)
+            //_loan.value = loanByIdAct(loanId)
+            val localLoan = loanByIdAct(loanId)
 
-            loan.value?.let { loan ->
+            localLoan?.let { loan ->
                 _selectedLoanAccount.value = accounts.value.find {
                     loan.accountId == it.id
                 }
@@ -151,11 +152,11 @@ class LoanDetailsViewModel @Inject constructor(
                     }
 
                 val increasedLoanAmount =
-                    (loan.value?.amount ?: 0.0) + displayLoanRecords.value.sumOf {
+                    (localLoan?.amount ?: 0.0) + displayLoanRecords.value.sumOf {
                         if (it.loanRecord.loanRecordType == LoanRecordType.LOAN_INCREASE) {
                             val fromCurrency = it.account?.currency ?: defaultCurrencyCode
                             val toCurrency =
-                                accounts.value.find { acc -> acc.id == loan.value?.accountId }?.currency
+                                accounts.value.find { acc -> acc.id == localLoan?.accountId }?.currency
                                     ?: defaultCurrencyCode
 
                             exchangeActNew.exchangeAmount(
@@ -167,7 +168,7 @@ class LoanDetailsViewModel @Inject constructor(
                             0.0
                     }
 
-                _loan.value = _loan.value?.copy(amount = increasedLoanAmount)
+                _loan.value = localLoan?.copy(amount = increasedLoanAmount)
             }
 
             computationThread {

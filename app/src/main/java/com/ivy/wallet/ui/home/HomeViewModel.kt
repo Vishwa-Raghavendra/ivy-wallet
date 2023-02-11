@@ -255,7 +255,9 @@ class HomeViewModel @Inject constructor(
 //                    )
 //                ),
                 history = emptyList(),
-                historyTransactionsNew = groupedTransactions.history
+                historyTransactionsNew = collapseGroupTransaction.filterCollapsedTransactions(
+                    groupedTransactions.history
+                )
             )
         }
 

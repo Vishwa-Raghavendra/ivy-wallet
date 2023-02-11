@@ -16,7 +16,17 @@ class CollapseGroupTransaction @Inject constructor() {
         } else
             collapsedDates.add(date.date)
 
-        return transactions.map {
+        return transactions.collapseTransactions()
+    }
+
+    fun filterCollapsedTransactions(
+        transactions: List<GroupedTransaction>
+    ): List<GroupedTransaction> {
+        return transactions.collapseTransactions()
+    }
+
+    private fun List<GroupedTransaction>.collapseTransactions(): List<GroupedTransaction> {
+        return this.map {
             when (it) {
                 is GroupedTransaction.TransactionDate -> it.copy(
                     collapsed = collapsedDates.contains(it.date)

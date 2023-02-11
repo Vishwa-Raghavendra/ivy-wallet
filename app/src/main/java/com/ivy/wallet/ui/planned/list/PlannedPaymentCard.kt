@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ivy.design.l0_system.UI
@@ -91,6 +92,21 @@ fun LazyItemScope.PlannedPaymentCard(
                     fontWeight = FontWeight.ExtraBold,
                     color = UI.colors.pureInverse
                 )
+            )
+        }
+
+        if (plannedPayment.description.isNotNullOrBlank()) {
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                text = plannedPayment.description!!,
+                modifier = Modifier.padding(horizontal = 24.dp),
+                style = UI.typo.nC.style(
+                    color = UI.colors.gray,
+                    fontWeight = FontWeight.Bold
+                ),
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
@@ -224,7 +240,11 @@ private fun RuleTextRow(
             val intervalTypeFormatted = intervalType?.forDisplay(intervalN ?: 0)?.uppercaseLocal()
             Text(
                 modifier = Modifier.padding(bottom = 1.dp),
-                text = stringResource(R.string.repeats_every, intervalN ?: 0 , intervalTypeFormatted ?: ""),
+                text = stringResource(
+                    R.string.repeats_every,
+                    intervalN ?: 0,
+                    intervalTypeFormatted ?: ""
+                ),
                 style = UI.typo.nC.style(
                     color = Orange,
                     fontWeight = FontWeight.ExtraBold

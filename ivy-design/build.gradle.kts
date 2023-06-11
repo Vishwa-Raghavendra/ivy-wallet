@@ -53,6 +53,7 @@ android {
         resources.excludes.add("META-INF/LGPL2.1")
         //-------------------------------------------------------
     }
+    namespace = "com.ivy.design"
 }
 
 dependencies {

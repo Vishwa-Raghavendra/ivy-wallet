@@ -109,6 +109,7 @@ android {
             it.useJUnitPlatform()
         }
     }
+    namespace = "com.ivy.wallet"
 }
 
 dependencies {

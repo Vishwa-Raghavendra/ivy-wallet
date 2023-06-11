@@ -19,7 +19,7 @@ repositories {
 
 dependencies {
     //https://mvnrepository.com/artifact/com.android.tools.build/gradle?repo=google
-    implementation("com.android.tools.build:gradle:7.4.2")
+    implementation("com.android.tools.build:gradle:8.0.2")
 
     //Must match kotlinVersion from dependencies.kt
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.10")

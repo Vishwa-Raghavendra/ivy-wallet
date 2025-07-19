@@ -95,7 +95,7 @@ fun LazyItemScope.CategoryCardNew(
                 onClick(cardState.data.category, category.associatedTransactions)
             }
             .padding(vertical = 16.dp)
-            .animateItemPlacement(animationSpec = tween(300)),
+            .animateItem(placementSpec = tween(300)),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Spacer(

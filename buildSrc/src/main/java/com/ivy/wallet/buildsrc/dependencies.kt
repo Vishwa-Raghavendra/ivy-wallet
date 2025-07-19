@@ -26,7 +26,7 @@ object Project {
     const val versionCode = 140
 
     //Compile SDK & Build Tools
-    const val compileSdkVersion = 31
+    const val compileSdkVersion = 35
 
     //App
     const val applicationId = "com.ivy.wallet"
@@ -36,7 +36,7 @@ object Project {
 
 object GlobalVersions {
     const val compose = "1.1.1"
-    const val kotlinVersion = "1.6.20"
+    const val kotlinVersion = "2.0.21"
 }
 
 /**
@@ -45,39 +45,39 @@ object GlobalVersions {
 fun DependencyHandler.appModuleDependencies(
     kotlinVersion: String = GlobalVersions.kotlinVersion
 ) {
-    implementation(project(":ivy-design"))
+//    implementation(project(":ivy-design"))
+//
+//    implementation("com.github.ILIYANGERMANOV:ivy-frp:0.9.5")
+//
+//    Kotlin(version = kotlinVersion)
+//    //Coroutines(version = "1.8.1")
+//    FunctionalProgramming(
+//        arrowVersion = "1.0.1",
+//        kotestVersion = "5.1.0",
+//        kotlinVersion = kotlinVersion
+//    )
+//
+//    //Compose(version = GlobalVersions.compose)
+//
+//    Google()
+//    Firebase()
 
-    implementation("com.github.ILIYANGERMANOV:ivy-frp:0.9.5")
+//    Hilt(
+//        hiltVersion = "2.56.1",
+//        versionX = "1.0.0"
+//    )
+    //RoomDB(version = "2.5.2")
 
-    Kotlin(version = kotlinVersion)
-    Coroutines(version = "1.6.4")
-    FunctionalProgramming(
-        arrowVersion = "1.0.1",
-        kotestVersion = "5.1.0",
-        kotlinVersion = kotlinVersion
-    )
+    //Networking(retrofitVersion = "2.9.0")
 
-    Compose(version = GlobalVersions.compose)
+    //Lifecycle(version = "2.5.1")
+    //AndroidX()
 
-    Google()
-    Firebase()
+    //DataStore()
 
-    Hilt(
-        hiltVersion = "2.38.1",
-        versionX = "1.0.0"
-    )
-    RoomDB(version = "2.4.3")
+    //ThirdParty()
 
-    Networking(retrofitVersion = "2.9.0")
-
-    Lifecycle(version = "2.5.1")
-    AndroidX()
-
-    DataStore()
-
-    ThirdParty()
-
-    Debug()
+    //Debug()
 }
 
 fun DependencyHandler.ivyDesignModuleDependencies(
@@ -109,6 +109,7 @@ fun DependencyHandler.DataStore() {
 fun DependencyHandler.Kotlin(version: String) {
     //URL: https://kotlinlang.org/docs/releases.html#release-details
     //WARNING: Version is also updated from buildSrc
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:$version")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:$version")
 }
 
@@ -192,24 +193,24 @@ fun DependencyHandler.Hilt(
     hiltVersion: String,
     versionX: String
 ) {
-    implementation("com.google.dagger:hilt-android:$hiltVersion")
-    kapt("com.google.dagger:hilt-android-compiler:$hiltVersion")
+//    implementation("com.google.dagger:hilt-android:$hiltVersion")
+//    ksp("com.google.dagger:hilt-android-compiler:$hiltVersion")
 
     //URL: https://mvnrepository.com/artifact/androidx.hilt/hilt-lifecycle-viewmodel?repo=google
 //    implementation("androidx.hilt:hilt-lifecycle-viewmodel:$versionX")
-    kapt("androidx.hilt:hilt-compiler:$versionX")
+    //kapt("androidx.hilt:hilt-compiler:$versionX")
 
     //URL: https://developer.android.com/training/dependency-injection/hilt-jetpack#workmanager
-    implementation("androidx.hilt:hilt-work:$versionX")
+    //implementation("androidx.hilt:hilt-work:$versionX")
 
-    HiltTesting(version = hiltVersion)
+    //HiltTesting(version = hiltVersion)
 }
 
 fun DependencyHandler.HiltTesting(
     version: String
 ) {
     androidTestImplementation("com.google.dagger:hilt-android-testing:$version")
-    kaptAndroidTest("com.google.dagger:hilt-android-compiler:$version")
+   // kaptAndroidTest("com.google.dagger:hilt-android-compiler:$version")
     implementation("androidx.test:runner:1.4.0")
 }
 
@@ -219,9 +220,9 @@ fun DependencyHandler.HiltTesting(
 fun DependencyHandler.RoomDB(
     version: String = "2.4.0-alpha03"
 ) {
-    implementation("androidx.room:room-runtime:$version")
-    kapt("androidx.room:room-compiler:$version")
-    implementation("androidx.room:room-ktx:$version")
+//    implementation("androidx.room:room-runtime:$version")
+//    //ksp("androidx.room:room-compiler:$version")
+//    implementation("androidx.room:room-ktx:$version")
 }
 
 /**
@@ -253,7 +254,7 @@ fun DependencyHandler.Lifecycle(
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$version")
     implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:$version")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:$version")
-    kapt("androidx.lifecycle:lifecycle-compiler:$version")
+    //kapt("androidx.lifecycle:lifecycle-compiler:$version")
 }
 
 fun DependencyHandler.AndroidX() {

@@ -78,7 +78,7 @@ fun LazyItemScope.TransactionCardNew(
             }
             .background(UI.colors.medium, UI.shapes.r4)
             .testTag("transaction_card_new")
-            .animateItemPlacement(animationSpec = tween(300))
+            .animateItem(placementSpec = tween(300))
     ) {
         Spacer(Modifier.height(20.dp))
 

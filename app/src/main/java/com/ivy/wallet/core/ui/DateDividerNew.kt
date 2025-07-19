@@ -52,7 +52,7 @@ fun LazyItemScope.DateDividerNew(
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
-            .animateItemPlacement(animationSpec = tween(300)),
+            .animateItem(placementSpec = tween(300)),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Spacer(Modifier.width( if(isCollapsed) 8.dp else 24.dp))

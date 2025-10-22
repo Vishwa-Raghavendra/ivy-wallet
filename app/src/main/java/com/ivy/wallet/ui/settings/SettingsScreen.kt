@@ -43,6 +43,7 @@ import com.ivy.wallet.R
 import com.ivy.wallet.domain.data.AuthProviderType
 import com.ivy.wallet.domain.data.IvyCurrency
 import com.ivy.wallet.domain.data.core.User
+import com.ivy.wallet.io.SmsMessage
 import com.ivy.wallet.ui.*
 import com.ivy.wallet.ui.donate.DonateScreen
 import com.ivy.wallet.ui.theme.*
@@ -51,6 +52,7 @@ import com.ivy.wallet.ui.theme.components.IvySwitch
 import com.ivy.wallet.ui.theme.components.IvyToolbar
 import com.ivy.wallet.ui.theme.modal.*
 import com.ivy.wallet.utils.*
+import java.time.ZoneId
 import java.util.*
 
 @ExperimentalFoundationApi
@@ -71,8 +73,19 @@ fun BoxWithConstraintsScope.SettingsScreen(screen: Settings) {
     val nameLocalAccount by viewModel.nameLocalAccount.observeAsState()
     val opFetchTrns by viewModel.opFetchTrns.collectAsState()
 
+    val smsImportStartDate by viewModel.smsImportStartDate.observeAsState()
+    val smsMessages by viewModel.smsMessages.collectAsState()
+
+    var smsImportModalVisible by remember { mutableStateOf(false) }
+
     onScreenStart {
         viewModel.start()
+    }
+
+    LaunchedEffect(smsMessages) {
+        if (smsMessages.isNotEmpty()) {
+            smsImportModalVisible = true
+        }
     }
 
     val ivyActivity = LocalContext.current as RootActivity
@@ -89,8 +102,9 @@ fun BoxWithConstraintsScope.SettingsScreen(screen: Settings) {
 
         nameLocalAccount = nameLocalAccount,
         startDateOfMonth = startDateOfMonth,
+        smsImportStartDate = smsImportStartDate,
         opFetchTrns = opFetchTrns,
-
+        smsMessages = smsMessages,
 
         onSetCurrency = viewModel::setCurrency,
         onSetName = viewModel::setName,
@@ -104,6 +118,9 @@ fun BoxWithConstraintsScope.SettingsScreen(screen: Settings) {
         onExportToCSV = {
             viewModel.exportToCSV(context)
         },
+        onImportFromSms = viewModel::importFromSms,
+        onSmsImportStartDateSelected = viewModel::onSmsImportStartDateSelected,
+        onSmsSelected = viewModel::onSmsSelected,
         onSetLockApp = viewModel::setLockApp,
         onSetShowNotifications = viewModel::setShowNotifications,
         onSetHideCurrentBalance = viewModel::setHideCurrentBalance,
@@ -119,6 +136,13 @@ fun BoxWithConstraintsScope.SettingsScreen(screen: Settings) {
         onDeleteAllUserData = viewModel::deleteAllUserData,
         onDeleteCloudUserData = viewModel::deleteCloudUserData,
         onFetchMissingTransactions = viewModel::fetchMissingTransactions
+    )
+
+    SmsImportModal(
+        visible = smsImportModalVisible,
+        smsMessages = smsMessages,
+        onSmsSelected = viewModel::onSmsSelected,
+        dismiss = { smsImportModalVisible = false }
     )
 }
 
@@ -137,6 +161,8 @@ private fun BoxWithConstraintsScope.UI(
 
     nameLocalAccount: String?,
     startDateOfMonth: Int = 1,
+    smsImportStartDate: Date?,
+    smsMessages: List<SmsMessage>,
 
     opFetchTrns: OpResult<Unit>? = null,
 
@@ -149,6 +175,9 @@ private fun BoxWithConstraintsScope.UI(
     onLogin: () -> Unit,
     onBackupData: () -> Unit = {},
     onExportToCSV: () -> Unit = {},
+    onImportFromSms: (Date?) -> Unit = {},
+    onSmsImportStartDateSelected: (Date) -> Unit = {},
+    onSmsSelected: (SmsMessage) -> Unit = {},
     onSetLockApp: (Boolean) -> Unit = {},
     onSetShowNotifications: (Boolean) -> Unit = {},
     onSetTreatTransfersAsIncExp: (Boolean) -> Unit = {},
@@ -167,6 +196,8 @@ private fun BoxWithConstraintsScope.UI(
     var deleteCloudDataModalVisible by remember { mutableStateOf(false) }
     var deleteAllDataModalVisible by remember { mutableStateOf(false) }
     var deleteAllDataModalFinalVisible by remember { mutableStateOf(false) }
+
+    val ivyContext = ivyWalletCtx()
 
     LazyColumn(
         modifier = Modifier
@@ -276,6 +307,17 @@ private fun BoxWithConstraintsScope.UI(
                         launchedFromOnboarding = false
                     )
                 )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            SettingsDefaultButton(
+                icon = R.drawable.ic_export_csv,
+                text = "Import from SMS"
+            ) {
+                ivyContext.datePicker(initialDate = smsImportStartDate?.toLocalDate()) {
+                    onSmsImportStartDateSelected(it.toDate())
+                }
             }
         }
 
@@ -1053,6 +1095,7 @@ private fun TCAndPrivacyPolicy() {
 private fun SettingsPrimaryButton(
     @DrawableRes icon: Int,
     text: String,
+    modifier: Modifier = Modifier,
     hasShadow: Boolean = false,
     backgroundGradient: Gradient = Gradient.solid(UI.colors.medium),
     textColor: Color = White,
@@ -1255,12 +1298,14 @@ fun FetchMissingTransactionsButton(
 
 @Composable
 private fun SettingsDefaultButton(
+    modifier: Modifier = Modifier,
     @DrawableRes icon: Int,
     text: String,
     iconPadding: Dp = 0.dp,
     onClick: () -> Unit
 ) {
     SettingsPrimaryButton(
+        modifier = modifier,
         icon = icon,
         text = text,
         backgroundGradient = Gradient.solid(UI.colors.medium),
@@ -1270,6 +1315,16 @@ private fun SettingsDefaultButton(
         onClick()
     }
 }
+
+fun Date.toLocalDate(): java.time.LocalDate {
+    return this.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+}
+
+fun java.time.LocalDate.toDate(): Date {
+    return Date.from(this.atStartOfDay(ZoneId.systemDefault()).toInstant())
+}
+
+
 
 @ExperimentalFoundationApi
 @Preview
@@ -1290,6 +1345,8 @@ private fun Preview_synced() {
             opSync = OpResult.success(true),
             lockApp = false,
             currencyCode = "BGN",
+            smsImportStartDate = null,
+            smsMessages = emptyList(),
             onSetCurrency = {},
             onLogout = {},
             onLogin = {},
@@ -1317,6 +1374,8 @@ private fun Preview_notSynced() {
             nameLocalAccount = null,
             opSync = OpResult.success(false),
             currencyCode = "BGN",
+            smsImportStartDate = null,
+            smsMessages = emptyList(),
             onSetCurrency = {},
             onLogout = {},
             onLogin = {},
@@ -1344,6 +1403,8 @@ private fun Preview_loading() {
             nameLocalAccount = null,
             opSync = OpResult.loading(),
             currencyCode = "BGN",
+            smsImportStartDate = null,
+            smsMessages = emptyList(),
             onSetCurrency = {},
             onLogout = {},
             onLogin = {},
@@ -1363,6 +1424,8 @@ private fun Preview_localAccount() {
             opSync = null,
             currencyCode = "BGN",
             lockApp = false,
+            smsImportStartDate = null,
+            smsMessages = emptyList(),
             onSetCurrency = {},
             onLogout = {},
             onLogin = {},

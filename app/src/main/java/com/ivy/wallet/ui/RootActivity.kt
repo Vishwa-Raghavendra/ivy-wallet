@@ -1,5 +1,6 @@
 package com.ivy.wallet.ui
 
+import android.Manifest
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.appwidget.AppWidgetManager
@@ -17,6 +18,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
@@ -116,6 +118,8 @@ class RootActivity : AppCompatActivity() {
     private lateinit var openFileLauncher: ActivityResultLauncher<Unit>
     private lateinit var onFileOpened: (fileUri: Uri) -> Unit
 
+    private lateinit var requestSmsPermissionLauncher: ActivityResultLauncher<String>
+    private lateinit var onSmsPermissionGranted: () -> Unit
 
     private val viewModel: RootViewModel by viewModels()
 
@@ -277,6 +281,8 @@ class RootActivity : AppCompatActivity() {
         createFileLauncher()
 
         openFileLauncher()
+
+        requestSmsPermissionLauncher()
     }
 
     private fun googleSignInLauncher() {
@@ -359,6 +365,18 @@ class RootActivity : AppCompatActivity() {
             onFileOpened = onFileOpenedCallback
 
             openFileLauncher.launch(Unit)
+        }
+    }
+
+    private fun requestSmsPermissionLauncher() {
+        requestSmsPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                onSmsPermissionGranted()
+            }
+        }
+        ivyContext.requestSmsPermission = { onPermissionGranted ->
+            onSmsPermissionGranted = onPermissionGranted
+            requestSmsPermissionLauncher.launch(Manifest.permission.READ_SMS)
         }
     }
 

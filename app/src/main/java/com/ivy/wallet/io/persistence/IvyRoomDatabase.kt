@@ -14,16 +14,20 @@ import com.ivy.wallet.io.persistence.migration.*
         SettingsEntity::class, PlannedPaymentRuleEntity::class,
         UserEntity::class, ExchangeRateEntity::class, BudgetEntity::class,
         LoanEntity::class, LoanRecordEntity::class, DocumentEntity::class,
-        TagEntity::class, TagTransactionEntity::class, MetadataEntity::class
+        TagEntity::class, TagTransactionEntity::class, MetadataEntity::class, SmsConfigurationEntity::class
     ],
     autoMigrations = [
         AutoMigration(
             from = 121,
             to = 122,
             spec = IvyRoomDatabase.DeleteSEMigration::class
+        ),
+        AutoMigration(
+            from = 127,
+            to = 128,
         )
     ],
-    version = 127,
+    version = 128,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)
@@ -55,6 +59,8 @@ abstract class IvyRoomDatabase : RoomDatabase() {
     abstract fun tagTransactionDao(): TagTransactionDao
 
     abstract fun metadataDao(): MetadataDao
+
+    abstract fun smsConfigurationDao(): SmsConfigurationDao
 
     companion object {
         const val DB_NAME = "ivywallet.db"

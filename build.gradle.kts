@@ -2,14 +2,18 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
-    id("android-reporting")
-    // Run with:
-    // ./gradlew dependencyUpdates // Simple report in the console
-    // ./gradlew dependencyUpdates -DoutputFormatter=html,json,xml // Report in console & generate files accordingly
-    id("com.github.ben-manes.versions") version "0.39.0"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21" apply false
-    id("com.google.devtools.ksp") version "2.0.21-1.0.27" apply false
-    id("com.google.dagger.hilt.android") version "2.56.1" apply false
+    //alias(libs.plugins.android.reporting) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.hilt.android) apply false
+
+    /**F
+     * Run with:
+     * 1) ./gradlew dependencyUpdates // Simple report in the console
+     * 2) ./gradlew dependencyUpdates -DoutputFormatter=html,json,xml
+     * (Report in console & generate files accordingly)
+     */
+    alias(libs.plugins.ben.manes.versions)
 }
 
 tasks {

@@ -10,6 +10,7 @@ import com.ivy.frp.view.navigation.Navigation
 import com.ivy.wallet.domain.action.global.StartDayOfMonthAct
 import com.ivy.wallet.domain.action.global.UpdateStartDayOfMonthAct
 import com.ivy.wallet.domain.action.transaction.FetchAllTrnsFromServerAct
+import com.ivy.wallet.domain.data.TransactionType
 import com.ivy.wallet.domain.data.analytics.AnalyticsEvent
 import com.ivy.wallet.domain.data.core.User
 import com.ivy.wallet.domain.deprecated.logic.LogoutLogic
@@ -17,6 +18,8 @@ import com.ivy.wallet.domain.deprecated.logic.csv.ExportCSVLogic
 import com.ivy.wallet.domain.deprecated.logic.currency.ExchangeRatesLogic
 import com.ivy.wallet.domain.deprecated.logic.zip.ExportZipLogic
 import com.ivy.wallet.domain.deprecated.sync.IvySync
+import com.ivy.wallet.io.SmsMessage
+import com.ivy.wallet.io.SmsReader
 import com.ivy.wallet.io.network.FCMClient
 import com.ivy.wallet.io.network.IvyAnalytics
 import com.ivy.wallet.io.network.IvySession
@@ -34,10 +37,13 @@ import com.ivy.wallet.ui.widget.WalletBalanceReceiver
 import com.ivy.wallet.utils.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -58,6 +64,7 @@ class SettingsViewModel @Inject constructor(
     private val startDayOfMonthAct: StartDayOfMonthAct,
     private val updateStartDayOfMonthAct: UpdateStartDayOfMonthAct,
     private val fetchAllTrnsFromServerAct: FetchAllTrnsFromServerAct,
+    private val smsReader: SmsReader,
     private val nav: Navigation
 ) : ViewModel() {
 
@@ -93,6 +100,12 @@ class SettingsViewModel @Inject constructor(
 
     private val _opFetchtrns = MutableStateFlow<OpResult<Unit>?>(null)
     val opFetchTrns = _opFetchtrns.asStateFlow()
+
+    private val _smsMessages = MutableStateFlow<List<SmsMessage>>(emptyList())
+    val smsMessages = _smsMessages.asStateFlow()
+
+    private val _smsImportStartDate = MutableLiveData<Date?>()
+    val smsImportStartDate = _smsImportStartDate.asLiveData()
 
     fun start() {
         viewModelScope.launch {
@@ -355,6 +368,41 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun onSmsImportStartDateSelected(date: Date) {
+        _smsImportStartDate.value = date
+        importFromSms(date)
+    }
+
+    fun importFromSms(startDate: Date? = null) {
+        if (smsReader.hasSmsPermission()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                _smsMessages.update { currentList ->
+                    currentList + smsReader.readSmsMessages(startDate)
+                }
+                delay(100)
+                Timber.d("%s %s", "SMS import started", smsMessages.value)
+                Timber.d("%s %s", "SMS import started", SmsTransactionParser().parse(smsMessages.value))
+            }
+        } else {
+            ivyContext.requestSmsPermission {
+                viewModelScope.launch(Dispatchers.IO) {
+                    _smsMessages.update { currentList ->
+                        currentList + smsReader.readSmsMessages(startDate)
+                    }
+                }
+            }
+        }
+    }
+
+    fun onSmsSelected(message: SmsMessage) {
+        Timber.d("SMS selected: %s", message.body)
+        clearSmsMessages()
+    }
+
+    fun clearSmsMessages() {
+        _smsMessages.value = emptyList()
+    }
+
     fun requestFeature(
         rootActivity: RootActivity,
         title: String,
@@ -431,3 +479,50 @@ class SettingsViewModel @Inject constructor(
         }
     }
 }
+
+class SmsTransactionParser {
+
+    private val accountRegex = Regex("""A/c\s*[\*\w-]+""", RegexOption.IGNORE_CASE)
+    private val amountRegex = Regex("""(?:Rs\.?|INR)\s*([\d,]+(?:\.\d{1,2})?)""", RegexOption.IGNORE_CASE)
+    private val debitKeywords = listOf("debited", "withdrawn", "spent", "sent", "transfer to")
+    private val creditKeywords = listOf("credited", "received", "deposit", "refunded")
+    private val titleRegex = Regex("""to\s+([A-Z0-9&\s\.\-]+)""", RegexOption.IGNORE_CASE)
+
+    fun parse(messages: List<SmsMessage>): List<TransactionMessage> {
+        return messages.map { parse(it.body) }
+    }
+
+    fun parse(message: String): TransactionMessage {
+        val accountId = accountRegex.find(message)?.value
+            ?.substringAfter("A/c")
+            ?.trim()
+
+        val amount = amountRegex.find(message)?.groupValues?.get(1)
+            ?.replace(",", "")
+            ?.toDoubleOrNull()
+
+        val type = when {
+            debitKeywords.any { message.contains(it, ignoreCase = true) } -> TransactionType.EXPENSE
+            creditKeywords.any { message.contains(it, ignoreCase = true) } -> TransactionType.INCOME
+            else -> TransactionType.EXPENSE
+        }
+
+        val title = titleRegex.find(message)?.groupValues?.get(1)?.trim()
+
+        return TransactionMessage(
+            accountId = accountId,
+            transactionType = type,
+            amount = amount,
+            title = title,
+            description = message
+        )
+    }
+}
+
+data class TransactionMessage(
+    val accountId: String?,
+    val transactionType: TransactionType,
+    val amount: Double?,
+    val title: String?,
+    val description: String
+)

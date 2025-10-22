@@ -6,11 +6,11 @@ import com.ivy.wallet.buildsrc.appModuleDependencies
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
+    alias(libs.plugins.kotlin.compose)
+    //alias(libs.plugins.kotlin.android)
     id("kotlin-android")
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android)
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
 }

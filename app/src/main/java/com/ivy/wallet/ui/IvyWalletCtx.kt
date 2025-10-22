@@ -131,6 +131,8 @@ class IvyWalletCtx : IvyContext() {
 
     lateinit var openFile: (onOpened: (Uri) -> Unit) -> Unit
 
+    lateinit var requestSmsPermission: (onPermissionGranted: () -> Unit) -> Unit
+
     //Testing --------------------------------------------------------------------------------------
     fun reset() {
         mainTab = MainTab.HOME
